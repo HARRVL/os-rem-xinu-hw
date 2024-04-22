@@ -17,6 +17,12 @@
  */
 devcall fileDelete(int fd)
 {
+
+    // TODO: Unlink this file from the master directory index,
+    //  and return its space to the free disk block list.
+    //  Use the superblock's locks to guarantee mutually exclusive
+    //  access to the directory index.
+    
     struct dentry *phw;
     int devtab;
 
