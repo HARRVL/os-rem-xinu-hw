@@ -10,6 +10,8 @@
 #include <kernel.h>
 #include <memory.h>
 #include <file.h>
+#include <string.h>
+
 
 /*------------------------------------------------------------------------
  * fileDelete - Delete a file.
