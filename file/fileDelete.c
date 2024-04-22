@@ -61,7 +61,6 @@ devcall fileDelete(int fd)
     }
 
     // Get device entry from device table using the device number (dvnum)
-    // The devtab_get function needs to be declared in a header or implemented elsewhere.
     pdev = (struct dentry *)devtab_get(supertab->sb_disk->dvnum);
     if (pdev == NULL)
     {
