@@ -17,11 +17,15 @@
  * sbFreeBlock - Add a block back into the free list of disk blocks.
  *------------------------------------------------------------------------
  */
+
+// TODO: Add the block back into the filesystem's list of
+    //  free blocks.  Use the superblock's locks to guarantee
+    //  mutually exclusive access to the free list, and write
+    //  the changed free list segment(s) back to disk. int diskfd struct freeblock * pointer return dev call 
+
 devcall sbFreeBlock(struct superblock *psuper, int block)
 {
-    struct freeblock *freeblk;
-    struct freeblock *collector;
-    int diskfd;
+    struct freeblock *collector, *newnode;
 
     // Error check if superblock is null
     if (NULL == psuper)
@@ -41,41 +45,27 @@ devcall sbFreeBlock(struct superblock *psuper, int block)
     // Get the first collector node
     collector = psuper->sb_freelst;
 
-    // Case: if the disk is completely full
-    if (0 == collector->fr_count)
+    // Check if the current collector node is full
+    if (collector->fr_count >= FREEBLOCKMAX)
     {
-        // Create a new collector node
-        // (Note: Actual implementation of adding collector nodes is needed)
+        // Allocate memory for a new collector node
+        newnode = (struct freeblock *)getmem(sizeof(struct freeblock));
+        if ((int)newnode == SYSERR)
+        {
+            signal(psuper->sb_freelock);
+            return SYSERR;
+        }
+
+        // Initialize the new collector node
+        newnode->fr_count = 1; // Since we're adding the first block
+        newnode->fr_free[0] = block;
+        newnode->fr_next = collector; // Link to the current collector
+        psuper->sb_freelst = newnode; // Update the superblock to point to the new node
     }
     else
     {
-        // Add to the next available index in collector node
+        // Add to the next available index in the current collector node
         collector->fr_free[collector->fr_count++] = block;
-    }
-
-    // Assuming 'devtab_get' returns a pointer to a 'struct disk' and that it is properly declared.
-    // You need to include the header file where 'devtab_get' is declared or define the function if missing.
-    struct disk *pdisk = (struct disk *)devtab_get(psuper->sb_disk->dvnum);
-    if (NULL == pdisk)
-    {
-        signal(psuper->sb_freelock);
-        return SYSERR;
-    }
-
-    // Assuming 'disk_current' or a similar correctly named member holds the current block information.
-    diskfd = pdisk->disk_current;
-
-    // Write this information to the disk
-    // You need to replace 'seek' and 'write' with the actual function calls to interact with the disk.
-    if (SYSERR == seek(diskfd, collector->fr_blocknum))
-    {
-        signal(psuper->sb_freelock);
-        return SYSERR;
-    }
-    if (SYSERR == write(diskfd, collector, sizeof(struct freeblock)))
-    {
-        signal(psuper->sb_freelock);
-        return SYSERR;
     }
 
     // Signal semaphore to end mutual exclusion
