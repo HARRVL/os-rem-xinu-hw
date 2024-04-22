@@ -29,56 +29,56 @@ extern struct dentry *devtab_get(int devnum);
 
 devcall fileDelete(int fd)
 {
-    struct dentry *pdev;
-    int devtab;
+    // struct dentry *pdev;
+    // int devtab;
 
-    // Error check the file descriptor (fd)
-    if (isbadfd(fd))
-    {
-        return SYSERR;
-    }
+    // // Error check the file descriptor (fd)
+    // if (isbadfd(fd))
+    // {
+    //     return SYSERR;
+    // }
 
-    // Lock the directory block for mutual exclusion
-    wait(supertab->sb_dirlock);
+    // // Lock the directory block for mutual exclusion
+    // wait(supertab->sb_dirlock);
 
-    // Error check the directory list
-    struct filenode *fnode = &supertab->sb_dirlst->db_fnodes[fd];
-    if (NULL == fnode || FILE_USED != fnode->fn_state)
-    {
-        signal(supertab->sb_dirlock);
-        return SYSERR;
-    }
+    // // Error check the directory list
+    // struct filenode *fnode = &supertab->sb_dirlst->db_fnodes[fd];
+    // if (NULL == fnode || FILE_USED != fnode->fn_state)
+    // {
+    //     signal(supertab->sb_dirlock);
+    //     return SYSERR;
+    // }
 
-    // Reset values of the file
-    memset(fnode->fn_name, 0, FNAMLEN + 1);
-    fnode->fn_state = FILE_FREE;
-    fnode->fn_length = 0;
-    fnode->fn_cursor = 0;
+    // // Reset values of the file
+    // memset(fnode->fn_name, 0, FNAMLEN + 1);
+    // fnode->fn_state = FILE_FREE;
+    // fnode->fn_length = 0;
+    // fnode->fn_cursor = 0;
 
-    // Remove data from hard drive with sbFreeBlock
-    if (SYSERR == sbFreeBlock(supertab, fnode->fn_blocknum))
-    {
-        signal(supertab->sb_dirlock);
-        return SYSERR;
-    }
+    // // Remove data from hard drive with sbFreeBlock
+    // if (SYSERR == sbFreeBlock(supertab, fnode->fn_blocknum))
+    // {
+    //     signal(supertab->sb_dirlock);
+    //     return SYSERR;
+    // }
 
-    // Get device entry from device table using the device number (dvnum)
-    pdev = (struct dentry *)devtab_get(supertab->sb_disk->dvnum);
-    if (pdev == NULL)
-    {
-        signal(supertab->sb_dirlock);
-        return SYSERR;
-    }
+    // // Get device entry from device table using the device number (dvnum)
+    // pdev = (struct dentry *)devtab_get(supertab->sb_disk->dvnum);
+    // if (pdev == NULL)
+    // {
+    //     signal(supertab->sb_dirlock);
+    //     return SYSERR;
+    // }
 
-    // Assuming pdev->dvnum is the disk file descriptor you need.
-    devtab = pdev->dvnum;
+    // // Assuming pdev->dvnum is the disk file descriptor you need.
+    // devtab = pdev->dvnum;
 
-    // Write updated superblock back to disk
-    seek(devtab, SUPERBLOCKNUM);
-    write(devtab, supertab, sizeof(struct superblock));
+    // // Write updated superblock back to disk
+    // seek(devtab, SUPERBLOCKNUM);
+    // write(devtab, supertab, sizeof(struct superblock));
 
-    // Signal semaphore to end mutual exclusion
-    signal(supertab->sb_dirlock);
+    // // Signal semaphore to end mutual exclusion
+    // signal(supertab->sb_dirlock);
 
-    return OK;
+    // return OK;
 }
