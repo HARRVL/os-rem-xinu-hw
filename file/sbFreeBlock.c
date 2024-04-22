@@ -18,15 +18,10 @@
  *------------------------------------------------------------------------
  */
 devcall sbFreeBlock(struct superblock *psuper, int block)
-
-    // TODO: Add the block back into the filesystem's list of
-    //  free blocks.  Use the superblock's locks to guarantee
-    //  mutually exclusive access to the free list, and write
-    //  the changed free list segment(s) back to disk.
 {
     struct freeblock *freeblk;
     struct freeblock *collector;
-    int devtab;
+    int diskfd;
 
     // Error check if superblock is null
     if (NULL == psuper)
@@ -58,11 +53,30 @@ devcall sbFreeBlock(struct superblock *psuper, int block)
         collector->fr_free[collector->fr_count++] = block;
     }
 
-    // Write this information to the disk
-    devtab = ((struct disk *)devtab_get(psuper->sb_disk->dvnum))->disk_blocknum;
+    // Assuming 'devtab_get' returns a pointer to a 'struct disk' and that it is properly declared.
+    // You need to include the header file where 'devtab_get' is declared or define the function if missing.
+    struct disk *pdisk = (struct disk *)devtab_get(psuper->sb_disk->dvnum);
+    if (NULL == pdisk)
+    {
+        signal(psuper->sb_freelock);
+        return SYSERR;
+    }
 
-    seek(devtab, collector->fr_blocknum);
-    write(devtab, collector, sizeof(struct freeblock));
+    // Assuming 'disk_current' or a similar correctly named member holds the current block information.
+    diskfd = pdisk->disk_current;
+
+    // Write this information to the disk
+    // You need to replace 'seek' and 'write' with the actual function calls to interact with the disk.
+    if (SYSERR == seek(diskfd, collector->fr_blocknum))
+    {
+        signal(psuper->sb_freelock);
+        return SYSERR;
+    }
+    if (SYSERR == write(diskfd, collector, sizeof(struct freeblock)))
+    {
+        signal(psuper->sb_freelock);
+        return SYSERR;
+    }
 
     // Signal semaphore to end mutual exclusion
     signal(psuper->sb_freelock);
