@@ -24,15 +24,49 @@
 
     // swizzle in all three cases, swizzle a super block only in case 1
 
-#include <kernel.h>
-#include <device.h>
+/* sbFreeBlock.c - Return a block to the free list */
+
+#include <xinu.h>
 #include <memory.h>
 #include <disk.h>
 #include <file.h>
 
-devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *node, int blocknum);
-devcall swizzleSuperblock(struct superblock *sb);
+/*------------------------------------------------------------------------
+ * Function to persist (or 'swizzle') a freeblock node to disk.
+ *------------------------------------------------------------------------
+ */
+devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *node) {
+    int diskfd = devptr - devtab; // Obtain the disk descriptor
+    int blocknum = node->fr_blocknum; // Get the block number to swizzle to
 
+    // Seek to the block's location on disk and write the node
+    if ((seek(diskfd, blocknum) == SYSERR) || (write(diskfd, node, sizeof(struct freeblock)) == SYSERR)) {
+        return SYSERR;
+    }
+
+    return OK;
+}
+
+/*------------------------------------------------------------------------
+ * Function to persist (or 'swizzle') the superblock to disk.
+ *------------------------------------------------------------------------
+ */
+devcall swizzleSuperblock(struct superblock *sb) {
+    struct dentry *devptr = sb->sb_disk;
+    int diskfd = devptr - devtab; // Obtain the disk descriptor
+
+    // Seek to the superblock's location and write the superblock
+    if ((seek(diskfd, sb->sb_blocknum) == SYSERR) || (write(diskfd, sb, sizeof(struct superblock)) == SYSERR)) {
+        return SYSERR;
+    }
+
+    return OK;
+}
+
+/*------------------------------------------------------------------------
+ * sbFreeBlock - Add a block back into the free list of disk blocks.
+ *------------------------------------------------------------------------
+ */
 devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
     struct freeblock *current = filesystem->sb_freelst, *prev = NULL;
 
@@ -48,7 +82,7 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
         current = current->fr_next;
     }
 
-    if (current == NULL) { // All blocks full, or no blocks yet
+    if (current == NULL) { // Need to create a new free block node
         current = (struct freeblock *)getmem(sizeof(struct freeblock));
         if (current == NULL) {
             signal(filesystem->sb_freelock);
@@ -61,12 +95,13 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
         if (prev) {
             prev->fr_next = current;
         } else {
-            filesystem->sb_freelst = current;
+            filesystem->sb_freelst = current; // This is now the head of the list
         }
     }
 
+    // Add the block to the free list
     current->fr_free[current->fr_count++] = blocknum;
-    if (swizzleFreeblockNode(filesystem->sb_disk, current, current->fr_blocknum) == SYSERR) {
+    if (swizzleFreeblockNode(filesystem->sb_disk, current) == SYSERR) {
         signal(filesystem->sb_freelock);
         return SYSERR;
     }
