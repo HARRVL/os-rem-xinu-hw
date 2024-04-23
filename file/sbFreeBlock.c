@@ -64,35 +64,48 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
 
     wait(filesystem->sb_freelock);
 
-    // Find the last node in the free list or the first node that can accommodate a new block
-    while (current != NULL && current->fr_count == FREEBLOCKMAX) {
+    // Debugging output
+    printf("Attempting to free block %d\n", blocknum);
+
+    // Traverse to the end of the free list or find a spot with available space
+    while (current != NULL && current->fr_count >= FREEBLOCKMAX) {
         prev = current;
         current = current->fr_next;
     }
 
-    if (current == NULL) { // All nodes are full or list is empty, create a new node
+    if (current == NULL) { // Need to create a new free block node
         current = (struct freeblock *)getmem(sizeof(struct freeblock));
         if (current == NULL) {
             signal(filesystem->sb_freelock);
             return SYSERR;
         }
         current->fr_count = 0;
+        current->fr_blocknum = blocknum; // Assigning a new block number
         current->fr_next = NULL;
         if (prev != NULL) {
-            prev->fr_next = current; // Link new node at the end of the list
+            prev->fr_next = current;
         } else {
-            filesystem->sb_freelst = current; // New node is the first node
+            filesystem->sb_freelst = current; // This is now the head of the list
         }
     }
 
     // Add the block to the free list
     current->fr_free[current->fr_count++] = blocknum;
+    printf("Block %d added to free list node with count %d\n", blocknum, current->fr_count);
 
     // Swizzle the changes to the disk
-    swizzleFreeblockNode(filesystem->sb_disk, current, current->fr_blocknum);
-    swizzleSuperblock(filesystem); // Swizzle the superblock if needed
+    if (swizzleFreeblockNode(filesystem->sb_disk, current, current->fr_blocknum) == SYSERR) {
+        printf("Failed to swizzle free block node.\n");
+        signal(filesystem->sb_freelock);
+        return SYSERR;
+    }
+
+    if (swizzleSuperblock(filesystem) == SYSERR) {
+        printf("Failed to swizzle superblock.\n");
+        signal(filesystem->sb_freelock);
+        return SYSERR;
+    }
 
     signal(filesystem->sb_freelock);
     return OK;
 }
-
