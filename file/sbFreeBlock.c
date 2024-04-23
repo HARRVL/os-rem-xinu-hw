@@ -23,53 +23,39 @@
     //  mutually exclusive access to the free list, and write
     //  the changed free list segment(s) back to disk. int diskfd struct freeblock * pointer return dev call 
 
-devcall sbFreeBlock(struct superblock *psuper, int block)
+devcall sbFreeBlock(struct superblock *filesystem, int blocknum)
 {
-    struct freeblock *collector, *newnode;
+    struct freeblock *currentBlockList, *newBlockNode;
 
-    // Error check if superblock is null
-    if (NULL == psuper)
+    if (NULL == filesystem || blocknum < 0 || blocknum >= filesystem->sb_blocktotal)
     {
         return SYSERR;
     }
 
-    // Error check block number
-    if ((block < 0) || (block >= psuper->sb_blocktotal))
+    wait(filesystem->sb_freelock);
+
+    currentBlockList = filesystem->sb_freelst;
+
+    if (FREEBLOCKMAX == currentBlockList->fr_count)
     {
-        return SYSERR;
-    }
-
-    // Lock free list for mutual exclusion
-    wait(psuper->sb_freelock);
-
-    // Get the first collector node
-    collector = psuper->sb_freelst;
-
-    // Check if the current collector node is full
-    if (collector->fr_count >= FREEBLOCKMAX)
-    {
-        // Allocate memory for a new collector node
-        newnode = (struct freeblock *)getmem(sizeof(struct freeblock));
-        if ((int)newnode == SYSERR)
+        newBlockNode = (struct freeblock *)getmem(sizeof(struct freeblock));
+        if (SYSERR == (int)newBlockNode)
         {
-            signal(psuper->sb_freelock);
+            signal(filesystem->sb_freelock);
             return SYSERR;
         }
 
-        // Initialize the new collector node
-        newnode->fr_count = 1; // Since we're adding the first block
-        newnode->fr_free[0] = block;
-        newnode->fr_next = collector; // Link to the current collector
-        psuper->sb_freelst = newnode; // Update the superblock to point to the new node
+        newBlockNode->fr_count = 1; // Initialize the count to 1 for the new block
+        newBlockNode->fr_free[0] = blocknum; // Add the block number to the free list
+        newBlockNode->fr_next = currentBlockList; // Link the new node in front
+        filesystem->sb_freelst = newBlockNode; // Set the new node as the head of the list
     }
     else
     {
-        // Add to the next available index in the current collector node
-        collector->fr_free[collector->fr_count++] = block;
+        currentBlockList->fr_free[currentBlockList->fr_count++] = blocknum;
     }
 
-    // Signal semaphore to end mutual exclusion
-    signal(psuper->sb_freelock);
+    signal(filesystem->sb_freelock);
 
     return OK;
 }
