@@ -42,7 +42,7 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
     }
 
     struct freeblock *lastBlock = NULL;
-    while (currentBlockList && currentBlockList->fr_count == FREEBLOCKMAX) {
+    while (currentBlockList->fr_next != NULL) {
         lastBlock = currentBlockList;
         currentBlockList = currentBlockList->fr_next;
     }
