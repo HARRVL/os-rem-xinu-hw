@@ -1,10 +1,3 @@
-/**
- * @file     xsh_test.c
- * @provides xsh_test
- *
- */
-/* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
-
 #include <xinu.h>
 
 /**
@@ -12,86 +5,31 @@
  * @param args array of arguments
  * @return OK for success, SYSERR for syntax error
  */
-// command xsh_test(int nargs, char *args[])
-// {
-//    TODO: Test your O/S.
-//    printf("This is where you should put some testing code.\n");
-//     return OK;
-// }
-
 command xsh_test(int nargs, char *args[])
 {
-    // Create a file
-    int fd = sbGetBlock(supertab);
-    sbFreeBlock(supertab,fd);
-    // if (fd == SYSERR)
-    // {
-    //     printf("Test failed: file creation failed.\n");
-    //     return SYSERR;
-    // }
-    // else
-    // {
-    //     printf("File created successfully.\n");
-    // }
+    int numTests = 65; // Number of tests to perform
+    int block;
+    kprintf("Starting block allocation and deallocation test...\n");
 
-    // // Write data to the file
-    // char data = 'X';
-    // if (filePutChar(fd, data) == SYSERR)
-    // {
-    //     printf("Test failed: writing to file failed.\n");
-    //     return SYSERR;
-    // }
-    // else
-    // {
-    //     printf("Data written to file successfully.\n");
-    // }
+    for (int i = 0; i < numTests; i++) {
+        block = sbGetBlock(supertab); // Attempt to allocate a block
+        if (block == SYSERR) {
+            kprintf("Failed to allocate block on iteration %d.\n", i);
+            continue; // Skip this iteration if block allocation failed
+        }
 
-    // // Close the file
-    // if (fileClose(fd) == SYSERR)
-    // {
-    //     printf("Test failed: file closing failed.\n");
-    //     return SYSERR;
-    // }
-    // else
-    // {
-    //     printf("File closed successfully.\n");
-    // }
+        kprintf("Allocated block number %d.\n", block);
 
-    // // Delete the file
-    // if (fileDelete(fd) == SYSERR)
-    // {
-    //     printf("Test failed: file deletion failed.\n");
-    //     return SYSERR;
-    // }
-    // else
-    // {
-    //     printf("File deleted successfully.\n");
-    // }
+        if (sbFreeBlock(supertab, block) == SYSERR) {
+            kprintf("Failed to free block %d on iteration %d.\n", block, i);
+        } else {
+            kprintf("Successfully freed block number %d.\n", block);
+        }
+    }
 
-    // Print free list
-
-    // wait(supertab->sb_freelock); // Synchronize access to the free list
-
-    // printf("\nFree block list visualization:\n");
-    // struct freeblock *fb = supertab->sb_freelst;
-    // if (fb == NULL) {
-    //     printf("No free blocks.\n");
-    // } else {
-    //     while (fb != NULL) {
-    //         printf("Free Block Node at Disk Block #%d: ", fb->fr_blocknum);
-    //         printf("Free Blocks Count: %d\n", fb->fr_count);
-    //         for (int i = 0; i < fb->fr_count; i++) {
-    //             printf("%d ", fb->fr_free[i]);
-    //         }
-    //         printf("\n");
-    //         fb = fb->fr_next; // Move to the next node
-    //     }
-    // }
-
-    xsh_diskstat(0,NULL);
-
-    // signal(supertab->sb_freelock); // Release the lock
+    kprintf("Final state of the disk's free list:\n");
+    xsh_diskstat(0, NULL); 
 
     return OK;
-
 }
+
