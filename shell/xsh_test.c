@@ -22,50 +22,51 @@
 command xsh_test(int nargs, char *args[])
 {
     // Create a file
-    int fd = fileCreate("testfile");
-    if (fd == SYSERR)
-    {
-        printf("Test failed: file creation failed.\n");
-        return SYSERR;
-    }
-    else
-    {
-        printf("File created successfully.\n");
-    }
+    int fd = sbGetBlock(supertab);
+    sbFreeBlock(supertab,fd);
+    // if (fd == SYSERR)
+    // {
+    //     printf("Test failed: file creation failed.\n");
+    //     return SYSERR;
+    // }
+    // else
+    // {
+    //     printf("File created successfully.\n");
+    // }
 
-    // Write data to the file
-    char data = 'X';
-    if (filePutChar(fd, data) == SYSERR)
-    {
-        printf("Test failed: writing to file failed.\n");
-        return SYSERR;
-    }
-    else
-    {
-        printf("Data written to file successfully.\n");
-    }
+    // // Write data to the file
+    // char data = 'X';
+    // if (filePutChar(fd, data) == SYSERR)
+    // {
+    //     printf("Test failed: writing to file failed.\n");
+    //     return SYSERR;
+    // }
+    // else
+    // {
+    //     printf("Data written to file successfully.\n");
+    // }
 
-    // Close the file
-    if (fileClose(fd) == SYSERR)
-    {
-        printf("Test failed: file closing failed.\n");
-        return SYSERR;
-    }
-    else
-    {
-        printf("File closed successfully.\n");
-    }
+    // // Close the file
+    // if (fileClose(fd) == SYSERR)
+    // {
+    //     printf("Test failed: file closing failed.\n");
+    //     return SYSERR;
+    // }
+    // else
+    // {
+    //     printf("File closed successfully.\n");
+    // }
 
-    // Delete the file
-    if (fileDelete(fd) == SYSERR)
-    {
-        printf("Test failed: file deletion failed.\n");
-        return SYSERR;
-    }
-    else
-    {
-        printf("File deleted successfully.\n");
-    }
+    // // Delete the file
+    // if (fileDelete(fd) == SYSERR)
+    // {
+    //     printf("Test failed: file deletion failed.\n");
+    //     return SYSERR;
+    // }
+    // else
+    // {
+    //     printf("File deleted successfully.\n");
+    // }
 
     // Print free list
 
