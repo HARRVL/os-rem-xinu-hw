@@ -12,6 +12,7 @@
 #include <memory.h>
 #include <disk.h>
 #include <file.h>
+#include <string.h>
 
 /*------------------------------------------------------------------------
  * Swizzle Functions - Ensure the updated structures are written to disk.
