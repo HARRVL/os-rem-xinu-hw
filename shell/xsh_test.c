@@ -87,7 +87,7 @@ command xsh_test(int nargs, char *args[])
     //     }
     // }
 
-    xsh_diskdat(0,NULL);
+    xsh_diskstat(0,NULL);
 
     // signal(supertab->sb_freelock); // Release the lock
 
