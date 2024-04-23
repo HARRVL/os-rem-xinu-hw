@@ -1,7 +1,7 @@
 /* sbFreeBlock.c - sbFreeBlock */
 /* Copyright (C) 2008, Marquette University.  All rights reserved. */
 /*                                                                 */
-/* Modified by   HR and MP                                         */
+/* Modified by                                                     */
 /*                                                                 */
 /* and                                                             */
 /*                                                                 */
