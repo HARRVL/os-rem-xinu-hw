@@ -115,7 +115,3 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
 
     return OK;
 }
-
-    signal(filesystem->sb_freelock);
-    return OK;
-}
