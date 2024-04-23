@@ -1,9 +1,9 @@
 /* sbFreeBlock.c - sbFreeBlock */
 /* Copyright (C) 2008, Marquette University.  All rights reserved. */
 /*                                                                 */
-/* Modified by Hector Reyes and Max Pena                           */
+/* Modified by                                                     */
 /*                                                                 */
-/*                                                                 */
+/* and                                                             */
 /*                                                                 */
 /*                                                                 */
 
