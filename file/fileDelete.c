@@ -25,46 +25,44 @@
     //  Use the superblock's locks to guarantee mutually exclusive
     //  access to the directory index.
 
-extern struct dentry *devtab_get(int devnum);
-
 devcall fileDelete(int fd)
 {
     if (isbadfd(fd) || NULL == supertab) return SYSERR;
 
-    struct dentry *diskEntryPtr = supertab->superDisk;
-    int diskFileDescriptor = diskEntryPtr - deviceTable;
+    struct dentry *deviceEntry = supertab->sb_disk;
+    int deviceFileDescriptor = deviceEntry - devtab;
 
-    wait(supertab->dirLock);
+    wait(supertab->sb_dirlock);
 
-    if (NULL == supertab->dirList) 
+    if (NULL == supertab->sb_dirlst) 
     {
-        signal(supertab->dirLock);
+        signal(supertab->sb_dirlock);
         return SYSERR;
     }
 
-    if (FILE_FREE == fileTab[fileDescriptor].state) return SYSERR;
+    if (FILE_FREE == filetab[fd].fn_state) return SYSERR;
 
-    fileTab[fileDescriptor].fileLength = 0;
-    fileTab[fileDescriptor].fileName[0] = '\0';
-    fileTab[fileDescriptor].state = FILE_FREE;
+    filetab[fd].fn_length = 0;
+    filetab[fd].fn_name[0] = '\0';
+    filetab[fd].fn_state = FILE_FREE;
 
-    if (SYSERR == freeBlock(supertab, fileTab[fd].blockNumber))
+    if (SYSERR == sbFreeBlock(supertab, filetab[fd].fn_blocknum))
     {
-        signal(supertab->dirLock);
+        signal(supertab->sb_dirlock);
         return SYSERR;
     }
 
-    if (SYSERR == diskSeek(diskFileDescriptor, supertab->dirList->dirBlockNumber))
+    if (SYSERR == seek(deviceFileDescriptor, supertab->sb_dirlst->db_blocknum))
     {
-        signal(supertab->dirLock);
+        signal(supertab->sb_dirlock);
         return SYSERR;
     }
-    if (SYSERR == diskWrite(diskFileDescriptor, supertab->dirList, sizeof(struct dirBlock)))
+    if (SYSERR == write(deviceFileDescriptor, supertab->sb_dirlst, sizeof(struct dirblock)))
     {
-        signal(supertab->dirLock);
+        signal(supertab->sb_dirlock);
         return SYSERR;
     }
 
-    signal(supertab->dirLock);
+    signal(supertab->sb_dirlock);
     return OK;
 }
