@@ -5,10 +5,7 @@
 #include <disk.h>
 #include <file.h>
 
-/*------------------------------------------------------------------------
- * Function to persist (or 'swizzle') a freeblock node to disk.
- *------------------------------------------------------------------------
- */
+// swizzle
 static devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *node) {
     if (node == NULL || devptr == NULL) {
         return SYSERR;
@@ -17,6 +14,8 @@ static devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *nod
     return (seek(diskfd, node->fr_blocknum) == SYSERR || write(diskfd, node, sizeof(struct freeblock)) == SYSERR) ? SYSERR : OK;
 }
 
+
+//swizzleSuperBlock
 static devcall swizzleSuperblock(struct superblock *sb) {
     if (sb == NULL || sb->sb_disk == NULL) {
         return SYSERR;
@@ -25,6 +24,8 @@ static devcall swizzleSuperblock(struct superblock *sb) {
     return (seek(diskfd, sb->sb_blocknum) == SYSERR || write(diskfd, sb, sizeof(struct superblock)) == SYSERR) ? SYSERR : OK;
 }
 
+
+// freeblock
 devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
     kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum); // Debugging output
 
