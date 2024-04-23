@@ -57,6 +57,16 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum)
 
     signal(filesystem->sb_freelock);
 
+
+    // TODO:
+    // case 1: when the block being free is the only free block in the system, there does nto exist any collextor node
+    // case 2: when the collector node that is last in the list is full, designate the newly freed block as a collector node
+    // case 3: when exsting free block has room in it and just add the block that is being freed to the end of the tracking array
+
+    // swizzle in all three cases, swizzle a super block only in case 1
+    
+
+
     return OK;
 }
 
