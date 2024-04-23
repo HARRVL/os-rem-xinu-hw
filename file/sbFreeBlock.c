@@ -36,16 +36,20 @@
  *------------------------------------------------------------------------
  */
 devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *node) {
-    int diskfd = devptr - devtab; // Obtain the disk descriptor
-    int blocknum = node->fr_blocknum; // Get the block number to swizzle to
+    int diskfd = devptr - devtab; 
+    int blocknum = node->fr_blocknum; 
 
-    // Seek to the block's location on disk and write the node
+    printf("Preparing to swizzle freeblock node to disk at block %d\n", blocknum);
+
     if ((seek(diskfd, blocknum) == SYSERR) || (write(diskfd, node, sizeof(struct freeblock)) == SYSERR)) {
+        printf("Failed to write freeblock node to disk at block %d\n", blocknum);
         return SYSERR;
     }
 
+    printf("Successfully swizzled freeblock node to disk at block %d\n", blocknum);
     return OK;
 }
+
 
 /*------------------------------------------------------------------------
  * Function to persist (or 'swizzle') the superblock to disk.
