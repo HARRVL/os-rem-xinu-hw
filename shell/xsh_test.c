@@ -69,25 +69,27 @@ command xsh_test(int nargs, char *args[])
 
     // Print free list
 
-    wait(supertab->sb_freelock); // Synchronize access to the free list
+    // wait(supertab->sb_freelock); // Synchronize access to the free list
 
-    printf("\nFree block list visualization:\n");
-    struct freeblock *fb = supertab->sb_freelst;
-    if (fb == NULL) {
-        printf("No free blocks.\n");
-    } else {
-        while (fb != NULL) {
-            printf("Free Block Node at Disk Block #%d: ", fb->fr_blocknum);
-            printf("Free Blocks Count: %d\n", fb->fr_count);
-            for (int i = 0; i < fb->fr_count; i++) {
-                printf("%d ", fb->fr_free[i]);
-            }
-            printf("\n");
-            fb = fb->fr_next; // Move to the next node
-        }
-    }
+    // printf("\nFree block list visualization:\n");
+    // struct freeblock *fb = supertab->sb_freelst;
+    // if (fb == NULL) {
+    //     printf("No free blocks.\n");
+    // } else {
+    //     while (fb != NULL) {
+    //         printf("Free Block Node at Disk Block #%d: ", fb->fr_blocknum);
+    //         printf("Free Blocks Count: %d\n", fb->fr_count);
+    //         for (int i = 0; i < fb->fr_count; i++) {
+    //             printf("%d ", fb->fr_free[i]);
+    //         }
+    //         printf("\n");
+    //         fb = fb->fr_next; // Move to the next node
+    //     }
+    // }
 
-    signal(supertab->sb_freelock); // Release the lock
+    xsh_diskdat(0,NULL);
+
+    // signal(supertab->sb_freelock); // Release the lock
 
     return OK;
 
