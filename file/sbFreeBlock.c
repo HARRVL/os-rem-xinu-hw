@@ -60,10 +60,12 @@ devcall sbFreeBlock(struct superblock *psuper, int block) {
             signal(psuper->sb_freelock);
             return SYSERR;
         }
-        memset(curr, 0, sizeof(struct freeblock)); // Initialize new node
-        curr->fr_count = 0;
+        // Manually initialize the new freeblock node
+        curr->fr_blocknum = psuper->sb_blocktotal; // Optionally use a new block number
+        curr->fr_count = 1;
+        curr->fr_free[0] = block;
         curr->fr_next = NULL;
-        curr->fr_free[curr->fr_count++] = block; // Add the block number
+
         if (prev != NULL) {
             prev->fr_next = curr; // Link the new block node
         } else {
