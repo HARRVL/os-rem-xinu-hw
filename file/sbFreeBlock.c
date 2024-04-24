@@ -47,7 +47,8 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
         currentBlockList = currentBlockList->fr_next;
     }
 
-    if (!currentBlockList) {
+    // case 2
+    if(((freeblk->fr_count == 0) && (psuper->sb_freelist == freeblk)) || (freeblk->fr_count == FREEBLOCKMAX)) {
         kprintf("All existing blocks are full, allocating a new block node.\n");
         currentBlockList = (struct freeblock *)getmem(sizeof(struct freeblock));
         if ((struct freeblock *)SYSERR == currentBlockList) {
