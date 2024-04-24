@@ -7,29 +7,35 @@
  */
 command xsh_test(int nargs, char *args[])
 {
-    int numTests = 5; // Number of tests to perform
-    int block;
-    kprintf("Starting block allocation and deallocation test...\n");
-
-    for (int i = 0; i < numTests; i++) {
-        block = sbGetBlock(supertab); // Attempt to allocate a block
+    // Example to allocate and free blocks in a loop
+    printf("Starting block allocation and deallocation test...\n");
+    for (int i = 0; i < 5; i++) { // Test with 5 iterations
+        int block = sbGetBlock(supertab); // Simulate getting a block
         if (block == SYSERR) {
-            kprintf("Failed to allocate block on iteration %d.\n", i);
-            continue; // Skip this iteration if block allocation failed
+            printf("Failed to allocate a block on iteration %d.\n", i);
+            continue;
         }
-
-        kprintf("Allocated block number %d.\n", block);
+        printf("Allocated block number %d.\n", block);
 
         if (sbFreeBlock(supertab, block) == SYSERR) {
-            kprintf("Failed to free block %d on iteration %d.\n", block, i);
+            printf("Failed to free block %d on iteration %d.\n", block, i);
         } else {
-            kprintf("Successfully freed block number %d.\n", block);
+            printf("Successfully freed block number %d.\n", block);
         }
     }
 
-    kprintf("Final state of the disk's free list:\n");
-    xsh_diskstat(0, NULL); 
-
+    // Display the final state of the free list
+    printf("\nFinal state of the disk's free list:\n");
+    struct freeblock *fb = supertab->sb_freelst;
+    while (fb != NULL) {
+        printf("Blk %3d, cnt %3d = ", fb->fr_blocknum, fb->fr_count);
+        for (int i = 0; i < fb->fr_count; i++) {
+            printf("[%03d]", fb->fr_free[i]);
+        }
+        printf("\n");
+        fb = fb->fr_next;
+    }
     return OK;
 }
+
 
