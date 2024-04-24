@@ -25,69 +25,54 @@ static devcall swizzleSuperblock(struct superblock *sb) {
 
 // freeblock
 devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
-    kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum); // Debugging output
+    kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum);
 
-    if (NULL == filesystem || blocknum < 0 || blocknum >= filesystem->sb_blocktotal) {
-        kprintf("Error: Invalid parameters.\n"); // Error message
+    if (filesystem == NULL || blocknum < 0 || blocknum >= filesystem->sb_blocktotal) {
+        kprintf("Error: Invalid parameters.\n");
         return SYSERR;
     }
 
     wait(filesystem->sb_freelock);
 
-    struct freeblock *currentBlockList = filesystem->sb_freelst;
-    struct freeblock *lastBlock = NULL;
+    struct freeblock *current = filesystem->sb_freelst;
+    struct freeblock *prev = NULL;
 
-    // Traverse to the last block or the block with available space
-    while (currentBlockList != NULL && currentBlockList->fr_count == FREEBLOCKMAX) {
-        lastBlock = currentBlockList;
-        currentBlockList = currentBlockList->fr_next;
+    // Traverse to find the last block in the list or a block with available space
+    while (current != NULL && current->fr_count == FREEBLOCKMAX) {
+        prev = current;
+        current = current->fr_next;
     }
 
-    // Case where all nodes are full or no nodes exist
-    if (currentBlockList == NULL || currentBlockList->fr_count == FREEBLOCKMAX) {
-        kprintf("Allocating a new free block node as all are full or non-existent.\n");
+    // Allocate a new block if necessary
+    if (current == NULL || current->fr_count >= FREEBLOCKMAX) {
         struct freeblock *newBlock = (struct freeblock *)getmem(sizeof(struct freeblock));
-        if ((struct freeblock *)SYSERR == newBlock) {
+        if (newBlock == SYSERR) {
             signal(filesystem->sb_freelock);
             return SYSERR;
         }
-
-        // Initialize the new block node
-        newBlock->fr_count = 1; // It will immediately contain the new block
-        newBlock->fr_free[0] = blocknum;
+        newBlock->fr_count = 0;
         newBlock->fr_next = NULL;
-        newBlock->fr_blocknum = blocknum; // Adjust this as needed
 
-        if (lastBlock) {
-            lastBlock->fr_next = newBlock;
+        if (prev != NULL) {
+            prev->fr_next = newBlock;
         } else {
-            filesystem->sb_freelst = newBlock; // This is now the first node if none existed before
+            filesystem->sb_freelst = newBlock; // First node in the list
         }
-
-        currentBlockList = newBlock; // Set current to new node for swizzling
-    } else {
-        // Add block to the current node
-        currentBlockList->fr_free[currentBlockList->fr_count++] = blocknum;
+        current = newBlock;
     }
 
-    // Swizzle the current node to save changes
-    if (swizzleFreeblockNode(filesystem->sb_disk, currentBlockList) == SYSERR) {
+    // Add the block number to the free list
+    current->fr_free[current->fr_count++] = blocknum;
+
+    // Swizzle the free block node to disk
+    if (swizzleFreeblockNode(filesystem->sb_disk, current) == SYSERR) {
         kprintf("Failed to swizzle the free block node.\n");
         signal(filesystem->sb_freelock);
         return SYSERR;
     }
 
-    // If this was the first block added to an empty list, also swizzle the superblock
-    if (filesystem->sb_freelst == currentBlockList && currentBlockList->fr_count == 1) {
-        kprintf("Swizzling superblock as this was the first free block added.\n");
-        if (swizzleSuperblock(filesystem) == SYSERR) {
-            signal(filesystem->sb_freelock);
-            return SYSERR;
-        }
-    }
-
+    kprintf("Exiting sbFreeBlock successfully. Block %d freed.\n", blocknum);
     signal(filesystem->sb_freelock);
-    kprintf("Exiting sbFreeBlock successfully.\n");
     return OK;
 }
 
