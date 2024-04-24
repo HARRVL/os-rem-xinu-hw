@@ -14,6 +14,7 @@ static devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *nod
     return (seek(diskfd, node->fr_blocknum) == SYSERR || write(diskfd, node, sizeof(struct freeblock)) == SYSERR) ? SYSERR : OK;
 }
 
+
 //swizzleSuperBlock
 static devcall swizzleSuperblock(struct superblock *sb) {
     if (sb == NULL || sb->sb_disk == NULL) {
@@ -23,58 +24,71 @@ static devcall swizzleSuperblock(struct superblock *sb) {
     return (seek(diskfd, sb->sb_blocknum) == SYSERR || write(diskfd, sb, sizeof(struct superblock)) == SYSERR) ? SYSERR : OK;
 }
 
+
 // freeblock
 devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
-    kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum);
+    kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum); // Debugging output
 
-    if (filesystem == NULL || blocknum < 0 || blocknum >= filesystem->sb_blocktotal) {
-        kprintf("Error: Invalid parameters.\n");
+    if (NULL == filesystem || blocknum < 0 || blocknum >= filesystem->sb_blocktotal) {
+        kprintf("Error: Invalid parameters.\n"); // Error message
         return SYSERR;
     }
 
     wait(filesystem->sb_freelock);
 
-    struct freeblock *current = filesystem->sb_freelst;
-    struct freeblock *prev = NULL;
-
-    // Traverse to find the last block in the list or a block with available space
-    while (current != NULL && current->fr_count == FREEBLOCKMAX) {
-        prev = current;
-        current = current->fr_next;
+    struct freeblock *currentBlockList = filesystem->sb_freelst;
+    if (currentBlockList == NULL) {
+        kprintf("Free list is currently empty.\n");
     }
 
-    // Allocate a new block if necessary
-    if (current == NULL || current->fr_count >= FREEBLOCKMAX) {
-        struct freeblock *newBlock = (struct freeblock *)getmem(sizeof(struct freeblock));
-        if (newBlock == SYSERR) {
-            signal(filesystem->sb_freelock);
-            return SYSERR;
-        }
-        newBlock->fr_count = 0;
-        newBlock->fr_next = NULL;
-
-        if (prev != NULL) {
-            prev->fr_next = newBlock;
-        } else {
-            filesystem->sb_freelst = newBlock; // First node in the list
-        }
-        current = newBlock;
+    struct freeblock *lastBlock = NULL;
+    while (currentBlockList->fr_next != NULL) {
+        lastBlock = currentBlockList;
+        currentBlockList = currentBlockList->fr_next;
     }
 
-    // Add the block number to the free list
-    current->fr_free[current->fr_count++] = blocknum;
+    // case 2
+    if (((currentBlockList->fr_count == 0) && (filesystem->sb_freelst == currentBlockList)) || (currentBlockList->fr_count >= FREEBLOCKMAX)) {
+    kprintf("All existing blocks are full, allocating a new block node.\n");
+    struct freeblock *newBlock = (struct freeblock *)getmem(sizeof(struct freeblock));
+    if ((struct freeblock *)SYSERR == newBlock) {
+        signal(filesystem->sb_freelock);
+        return SYSERR;
+    }
 
-    // Swizzle the free block node to disk
-    if (swizzleFreeblockNode(filesystem->sb_disk, current) == SYSERR) {
+    // Initialize the new block node
+    newBlock->fr_count = 0;
+    newBlock->fr_next = NULL;
+    newBlock->fr_blocknum = filesystem->sb_blocktotal++; // Example assignment, adjust as needed
+
+    // Link the new block correctly
+    if (lastBlock) {
+        lastBlock->fr_next = newBlock;
+    } else {
+        filesystem->sb_freelst = newBlock; // This is now the first node if lastBlock was NULL
+    }
+
+    currentBlockList = newBlock; // Move the pointer to the new block
+}
+
+    currentBlockList->fr_free[currentBlockList->fr_count++] = blocknum;
+    kprintf("Added block %d to free list node with starting block %d.\n", blocknum, currentBlockList->fr_blocknum);
+
+    if (swizzleFreeblockNode(filesystem->sb_disk, currentBlockList) == SYSERR) {
         kprintf("Failed to swizzle the free block node.\n");
         signal(filesystem->sb_freelock);
         return SYSERR;
     }
 
-    kprintf("Exiting sbFreeBlock successfully. Block %d freed.\n", blocknum);
+    if (lastBlock == NULL) { // This was the first block added when the list was empty
+        kprintf("Swizzling superblock as this was the first free block added.\n");
+        if (swizzleSuperblock(filesystem) == SYSERR) {
+            signal(filesystem->sb_freelock);
+            return SYSERR;
+        }
+    }
+
     signal(filesystem->sb_freelock);
+    kprintf("Exiting sbFreeBlock successfully.\n");
     return OK;
 }
-
-
-
