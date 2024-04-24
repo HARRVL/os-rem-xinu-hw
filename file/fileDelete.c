@@ -43,7 +43,7 @@ devcall fileDelete(int fd)
     if (FILE_FREE == filetab[fd].fn_state) return SYSERR;
 
     filetab[fd].fn_length = 0;
-    filetab[fd].fn_name[0] = '\0';
+    // filetab[fd].fn_name[0] = '\0';
     filetab[fd].fn_state = FILE_FREE;
 
     if (SYSERR == sbFreeBlock(supertab, filetab[fd].fn_blocknum))
