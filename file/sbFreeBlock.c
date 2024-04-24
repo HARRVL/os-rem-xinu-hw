@@ -48,21 +48,28 @@ devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
     }
 
     // case 2
-    if (((currentBlockList->fr_count == 0) && (filesystem->sb_freelst == currentBlockList)) || (currentBlockList->fr_count == FREEBLOCKMAX)) {
-        kprintf("All existing blocks are full, allocating a new block node.\n");
-        currentBlockList = (struct freeblock *)getmem(sizeof(struct freeblock));
-        if ((struct freeblock *)SYSERR == currentBlockList) {
-            signal(filesystem->sb_freelock);
-            return SYSERR;
-        }
-        currentBlockList->fr_count = 0;
-        currentBlockList->fr_next = NULL;
-        if (lastBlock) {
-            lastBlock->fr_next = currentBlockList;
-        } else {
-            filesystem->sb_freelst = currentBlockList;
-        }
+    if (((currentBlockList->fr_count == 0) && (filesystem->sb_freelst == currentBlockList)) || (currentBlockList->fr_count >= FREEBLOCKMAX)) {
+    kprintf("All existing blocks are full, allocating a new block node.\n");
+    struct freeblock *newBlock = (struct freeblock *)getmem(sizeof(struct freeblock));
+    if ((struct freeblock *)SYSERR == newBlock) {
+        signal(filesystem->sb_freelock);
+        return SYSERR;
     }
+
+    // Initialize the new block node
+    newBlock->fr_count = 0;
+    newBlock->fr_next = NULL;
+    newBlock->fr_blocknum = filesystem->sb_blocktotal++; // Example assignment, adjust as needed
+
+    // Link the new block correctly
+    if (lastBlock) {
+        lastBlock->fr_next = newBlock;
+    } else {
+        filesystem->sb_freelst = newBlock; // This is now the first node if lastBlock was NULL
+    }
+
+    currentBlockList = newBlock; // Move the pointer to the new block
+}
 
     currentBlockList->fr_free[currentBlockList->fr_count++] = blocknum;
     kprintf("Added block %d to free list node with starting block %d.\n", blocknum, currentBlockList->fr_blocknum);
