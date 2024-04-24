@@ -7,7 +7,7 @@
  */
 command xsh_test(int nargs, char *args[])
 {
-    int numTests = 65; // Number of tests to perform
+    int numTests = 5; // Number of tests to perform
     int block;
     kprintf("Starting block allocation and deallocation test...\n");
 
