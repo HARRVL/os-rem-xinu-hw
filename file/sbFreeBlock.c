@@ -5,90 +5,160 @@
 #include <disk.h>
 #include <file.h>
 
-// swizzle
-static devcall swizzleFreeblockNode(struct dentry *devptr, struct freeblock *node) {
-    if (node == NULL || devptr == NULL) {
-        return SYSERR;
-    }
-    int diskfd = devptr - devtab;
-    return (seek(diskfd, node->fr_blocknum) == SYSERR || write(diskfd, node, sizeof(struct freeblock)) == SYSERR) ? SYSERR : OK;
+devcall swizzle(int diskfd, struct freeblock *freeblk)
+{
+	struct freeblock *free2 = freeblk->fr_next;
+	if (freeblk->fr_next == NULL)
+	{
+		freeblk->fr_next = 0;
+	} else {
+		freeblk->fr_next = free2->fr_blocknum;
+	}
+
+	seek(diskfd, freeblk->fr_blocknum);
+	if (SYSERR == write(diskfd, freeblk, sizeof(struct freeblock)))
+	{
+		return SYSERR;
+	}
+
+	freeblk->fr_next = free2;
+
+	return OK;
 }
 
+devcall swizzleSuperBlock(int diskfd, struct superblock *psuper)
+{
+	
+	struct freeblock *swizzle = psuper->sb_freelst;
+	struct dirblock *swizzle2 = psuper->sb_dirlst;
 
-//swizzleSuperBlock
-static devcall swizzleSuperblock(struct superblock *sb) {
-    if (sb == NULL || sb->sb_disk == NULL) {
-        return SYSERR;
-    }
-    int diskfd = sb->sb_disk - devtab;
-    return (seek(diskfd, sb->sb_blocknum) == SYSERR || write(diskfd, sb, sizeof(struct superblock)) == SYSERR) ? SYSERR : OK;
+	psuper->sb_freelst = swizzle->fr_blocknum;
+	psuper->sb_dirlst = swizzle2->db_blocknum;
+
+	seek(diskfd, psuper->sb_blocknum);
+	
+	if (SYSERR == write(diskfd, psuper, sizeof(struct superblock)))
+	{
+		return SYSERR;
+	}
+
+	psuper->sb_freelst = swizzle; 
+	psuper->sb_dirlst = swizzle2;
+
+	return OK;
+
+	
 }
 
+devcall sbFreeBlock(struct superblock *psuper, int block)
+{
+    // TODO: Add the block back into the filesystem's list of
+    //  free blocks.  Use the superblock's locks to guarantee
+    //  mutually exclusive access to the free list, and write
+    //  the changed free list segment(s) back to disk.
+ 
 
-// freeblock
-devcall sbFreeBlock(struct superblock *filesystem, int blocknum) {
-    kprintf("Entering sbFreeBlock with blocknum: %d\n", blocknum); // Debugging output
+       int diskfd;
+       struct dentry *phw;
 
-    if (NULL == filesystem || blocknum < 0 || blocknum >= filesystem->sb_blocktotal) {
-        kprintf("Error: Invalid parameters.\n"); // Error message
-        return SYSERR;
-    }
+       if (NULL == psuper)
+       {
+	       return SYSERR;
+       }
 
-    wait(filesystem->sb_freelock);
+       phw = psuper->sb_disk;
+       if (NULL == phw)
+       {
+	       return SYSERR;
+       }
 
-    struct freeblock *currentBlockList = filesystem->sb_freelst;
-    if (currentBlockList == NULL) {
-        kprintf("Free list is currently empty.\n");
-    }
+       if ((block <= 0) || (block > DISKBLOCKTOTAL)) 
+       {
+	       return SYSERR;
+       }
 
-    struct freeblock *lastBlock = NULL;
-    while (currentBlockList->fr_next != NULL) {
-        lastBlock = currentBlockList;
-        currentBlockList = currentBlockList->fr_next;
-    }
+       diskfd = phw - devtab;
+       wait(psuper->sb_freelock);
 
-    // case 2
-    if (((currentBlockList->fr_count == 0) && (filesystem->sb_freelst == currentBlockList)) || (currentBlockList->fr_count >= FREEBLOCKMAX)) {
-    kprintf("All existing blocks are full, allocating a new block node.\n");
-    struct freeblock *newBlock = (struct freeblock *)getmem(sizeof(struct freeblock));
-    if ((struct freeblock *)SYSERR == newBlock) {
-        signal(filesystem->sb_freelock);
-        return SYSERR;
-    }
+       struct freeblock *freeblk = psuper->sb_freelst;
 
-    // Initialize the new block node
-    newBlock->fr_count = 0;
-    newBlock->fr_next = NULL;
-    newBlock->fr_blocknum = filesystem->sb_blocktotal++; // Example assignment, adjust as needed
 
-    // Link the new block correctly
-    if (lastBlock) {
-        lastBlock->fr_next = newBlock;
-    } else {
-        filesystem->sb_freelst = newBlock; // This is now the first node if lastBlock was NULL
-    }
+       if (NULL == freeblk)
+       {
+	    //CASE 1
+    	    //malloc space for freeblk & error check
+	    freeblk = malloc(sizeof(struct freeblock));
+	    if (NULL == freeblk)
+	    {
+		    return SYSERR;
+	    }
+	    //set its info
+	    freeblk->fr_blocknum = block;
+	    freeblk->fr_count = 0;
+	    freeblk->fr_next = NULL;
+	    //set psuper sb_Freelist to freeblk that was just malloc'd
+	    psuper->sb_freelst = freeblk;
+	    //swizzle superblock& error check
+	    if (NULL == swizzleSuperBlock(diskfd, psuper))
+	    {
+		    return SYSERR;
+	    }
+	    //swizzle and write new block to disk & error check
+	    if (NULL == swizzle(diskfd, freeblk))
+	    {
+		    return SYSERR;
+	    }
 
-    currentBlockList = newBlock; // Move the pointer to the new block
-}
+	    //signal to free lock and return OK if all is good
+	    signal(psuper->sb_freelock);
+	    
+	    return OK; //
+       }
 
-    currentBlockList->fr_free[currentBlockList->fr_count++] = blocknum;
-    kprintf("Added block %d to free list node with starting block %d.\n", blocknum, currentBlockList->fr_blocknum);
+       while (freeblk->fr_next != NULL)
+       {
+	       //move freeblk to its next
+	       freeblk = freeblk->fr_next;
+       }
 
-    if (swizzleFreeblockNode(filesystem->sb_disk, currentBlockList) == SYSERR) {
-        kprintf("Failed to swizzle the free block node.\n");
-        signal(filesystem->sb_freelock);
-        return SYSERR;
-    }
 
-    if (lastBlock == NULL) { // This was the first block added when the list was empty
-        kprintf("Swizzling superblock as this was the first free block added.\n");
-        if (swizzleSuperblock(filesystem) == SYSERR) {
-            signal(filesystem->sb_freelock);
-            return SYSERR;
-        }
-    }
+       //CASE 2
+       if (freeblk->fr_count >= FREEBLOCKMAX || ((freeblk->fr_count == 0) && (psuper->sb_freelst == freeblk))) 
+       { //how to check if collector node is completely full or completely empty
 
-    signal(filesystem->sb_freelock);
-    kprintf("Exiting sbFreeBlock successfully.\n");
-    return OK;
+	       struct freeblock *collector;
+	       //malloc space for collector & error check
+	       collector = malloc(sizeof(struct freeblock));
+
+	       if (NULL == collector)
+	       {
+		       return SYSERR;
+	       }
+	   	
+	       freeblk->fr_next = collector;
+	       collector->fr_blocknum = block;
+	       collector->fr_count = 0;
+	       collector->fr_next = NULL;
+	       //swizzle & error check
+	       if (NULL == swizzle(diskfd, collector))
+	       {
+		       return SYSERR;
+	       }
+	       //signal free lock & return OK
+	       signal(psuper->sb_freelock);
+	       return OK; 
+
+       }
+
+	freeblk->fr_free[freeblk->fr_count] = block;
+	freeblk->fr_count++;
+	//swizzle & error check
+	if (NULL == swizzle(diskfd, freeblk))
+	{
+		return SYSERR;
+	}
+	//signal free lock & return OK
+	signal(psuper->sb_freelock);
+
+	return OK;
 }
