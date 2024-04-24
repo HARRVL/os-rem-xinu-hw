@@ -1,3 +1,4 @@
+// edited by Hector Reyes and Max Pena
 /* sbFreeBlock.c - sbFreeBlock */
 #include <xinu.h>
 #include <device.h>
@@ -5,160 +6,148 @@
 #include <disk.h>
 #include <file.h>
 
+/**
+ * Swizzles a freeblock node's next pointer for disk storage
+ * and writes the freeblock node to disk.
+ * 
+ * @param diskfd The file descriptor for the disk device
+ * @param freeblk Pointer to the freeblock to be swizzled and written to disk
+ * @returns OK on success, SYSERR on failure
+ */
 devcall swizzle(int diskfd, struct freeblock *freeblk)
 {
-	struct freeblock *free2 = freeblk->fr_next;
-	if (freeblk->fr_next == NULL)
-	{
-		freeblk->fr_next = 0;
-	} else {
-		freeblk->fr_next = free2->fr_blocknum;
-	}
+    struct freeblock *free2 = freeblk->fr_next; // Temporarily store next pointer
 
-	seek(diskfd, freeblk->fr_blocknum);
-	if (SYSERR == write(diskfd, freeblk, sizeof(struct freeblock)))
-	{
-		return SYSERR;
-	}
+    // Modify the next pointer for swizzling: converting memory pointer to disk block number
+    if (freeblk->fr_next == NULL) {
+        freeblk->fr_next = 0; // NULL pointers are swizzled to 0
+    } else {
+        freeblk->fr_next = free2->fr_blocknum; // Use block number for swizzling
+    }
 
-	freeblk->fr_next = free2;
+    // Write the modified freeblock back to disk
+    seek(diskfd, freeblk->fr_blocknum); // Seek to the correct block
+    if (SYSERR == write(diskfd, freeblk, sizeof(struct freeblock))) {
+        freeblk->fr_next = free2; // Restore original next pointer on failure
+        return SYSERR;
+    }
 
-	return OK;
+    freeblk->fr_next = free2; // Restore original next pointer after successful write
+
+    return OK;
 }
 
+/**
+ * Swizzles and writes the superblock to disk.
+ * 
+ * @param diskfd The file descriptor for the disk device
+ * @param psuper Pointer to the superblock to be swizzled and written to disk
+ * @returns OK on success, SYSERR on failure
+ */
 devcall swizzleSuperBlock(int diskfd, struct superblock *psuper)
 {
-	
-	struct freeblock *swizzle = psuper->sb_freelst;
-	struct dirblock *swizzle2 = psuper->sb_dirlst;
+    // Store original next pointers
+    struct freeblock *swizzle = psuper->sb_freelst;
+    struct dirblock *swizzle2 = psuper->sb_dirlst;
 
-	psuper->sb_freelst = swizzle->fr_blocknum;
-	psuper->sb_dirlst = swizzle2->db_blocknum;
+    // Swizzle pointers to disk block numbers
+    psuper->sb_freelst = swizzle->fr_blocknum;
+    psuper->sb_dirlst = swizzle2->db_blocknum;
 
-	seek(diskfd, psuper->sb_blocknum);
-	
-	if (SYSERR == write(diskfd, psuper, sizeof(struct superblock)))
-	{
-		return SYSERR;
-	}
+    // Write the superblock to disk
+    seek(diskfd, psuper->sb_blocknum);
+    if (SYSERR == write(diskfd, psuper, sizeof(struct superblock))) {
+        // Restore original pointers if write fails
+        psuper->sb_freelst = swizzle;
+        psuper->sb_dirlst = swizzle2;
+        return SYSERR;
+    }
 
-	psuper->sb_freelst = swizzle; 
-	psuper->sb_dirlst = swizzle2;
+    // Restore original pointers after successful write
+    psuper->sb_freelst = swizzle;
+    psuper->sb_dirlst = swizzle2;
 
-	return OK;
-
-	
+    return OK;
 }
 
+/**
+ * Frees a block and adds it back to the filesystem's free block list.
+ * Ensures mutual exclusion via superblock locks and writes changes to disk.
+ * 
+ * @param psuper Pointer to the filesystem's superblock
+ * @param block The block number to be freed
+ * @returns OK on success, SYSERR on failure
+ */
 devcall sbFreeBlock(struct superblock *psuper, int block)
 {
-    // TODO: Add the block back into the filesystem's list of
-    //  free blocks.  Use the superblock's locks to guarantee
-    //  mutually exclusive access to the free list, and write
-    //  the changed free list segment(s) back to disk.
- 
+    // Basic error checking for input parameters
+    if (NULL == psuper) return SYSERR;
+    struct dentry *phw = psuper->sb_disk;
+    if (NULL == phw) return SYSERR;
+    if ((block <= 0) || (block > DISKBLOCKTOTAL)) return SYSERR;
 
-       int diskfd;
-       struct dentry *phw;
+    int diskfd = phw - devtab; // Calculate disk file descriptor
+    wait(psuper->sb_freelock); // Lock the free list for exclusive access
 
-       if (NULL == psuper)
-       {
-	       return SYSERR;
-       }
+    struct freeblock *freeblk = psuper->sb_freelst;
 
-       phw = psuper->sb_disk;
-       if (NULL == phw)
-       {
-	       return SYSERR;
-       }
+    if (NULL == freeblk) { // If free list is empty, allocate new free block node
+        freeblk = malloc(sizeof(struct freeblock));
+        if (NULL == freeblk) {
+            signal(psuper->sb_freelock);
+            return SYSERR;
+        }
+        // Initialize new free block node
+        freeblk->fr_blocknum = block;
+        freeblk->fr_count = 0;
+        freeblk->fr_next = NULL;
+        psuper->sb_freelst = freeblk;
 
-       if ((block <= 0) || (block > DISKBLOCKTOTAL)) 
-       {
-	       return SYSERR;
-       }
+        // Write changes to disk
+        if (SYSERR == swizzleSuperBlock(diskfd, psuper) || SYSERR == swizzle(diskfd, freeblk)) {
+            signal(psuper->sb_freelock);
+            return SYSERR;
+        }
 
-       diskfd = phw - devtab;
-       wait(psuper->sb_freelock);
+        signal(psuper->sb_freelock);
+        return OK;
+    }
 
-       struct freeblock *freeblk = psuper->sb_freelst;
+    // Traverse to the end of the free list
+    while (freeblk->fr_next != NULL) {
+        freeblk = freeblk->fr_next;
+    }
 
+    if (freeblk->fr_count >= FREEBLOCKMAX || ((freeblk->fr_count == 0) && (psuper->sb_freelst == freeblk))) {
+        struct freeblock *collector = malloc(sizeof(struct freeblock));
+        if (NULL == collector) {
+            signal(psuper->sb_freelock);
+            return SYSERR;
+        }
+        // Initialize new collector node
+        freeblk->fr_next = collector;
+        collector->fr_blocknum = block;
+        collector->fr_count = 0;
+        collector->fr_next = NULL;
 
-       if (NULL == freeblk)
-       {
-	    //CASE 1
-    	    //malloc space for freeblk & error check
-	    freeblk = malloc(sizeof(struct freeblock));
-	    if (NULL == freeblk)
-	    {
-		    return SYSERR;
-	    }
-	    //set its info
-	    freeblk->fr_blocknum = block;
-	    freeblk->fr_count = 0;
-	    freeblk->fr_next = NULL;
-	    //set psuper sb_Freelist to freeblk that was just malloc'd
-	    psuper->sb_freelst = freeblk;
-	    //swizzle superblock& error check
-	    if (NULL == swizzleSuperBlock(diskfd, psuper))
-	    {
-		    return SYSERR;
-	    }
-	    //swizzle and write new block to disk & error check
-	    if (NULL == swizzle(diskfd, freeblk))
-	    {
-		    return SYSERR;
-	    }
+        // Swizzle and write new collector to disk
+        if (SYSERR == swizzle(diskfd, collector)) {
+            signal(psuper->sb_freelock);
+            return SYSERR;
+        }
 
-	    //signal to free lock and return OK if all is good
-	    signal(psuper->sb_freelock);
-	    
-	    return OK; //
-       }
+        signal(psuper->sb_freelock);
+        return OK;
+    }
 
-       while (freeblk->fr_next != NULL)
-       {
-	       //move freeblk to its next
-	       freeblk = freeblk->fr_next;
-       }
+    // Add block to current free block node
+    freeblk->fr_free[freeblk->fr_count++] = block;
+    if (SYSERR == swizzle(diskfd, freeblk)) {
+        signal(psuper->sb_freelock);
+        return SYSERR;
+    }
 
-
-       //CASE 2
-       if (freeblk->fr_count >= FREEBLOCKMAX || ((freeblk->fr_count == 0) && (psuper->sb_freelst == freeblk))) 
-       { //how to check if collector node is completely full or completely empty
-
-	       struct freeblock *collector;
-	       //malloc space for collector & error check
-	       collector = malloc(sizeof(struct freeblock));
-
-	       if (NULL == collector)
-	       {
-		       return SYSERR;
-	       }
-	   	
-	       freeblk->fr_next = collector;
-	       collector->fr_blocknum = block;
-	       collector->fr_count = 0;
-	       collector->fr_next = NULL;
-	       //swizzle & error check
-	       if (NULL == swizzle(diskfd, collector))
-	       {
-		       return SYSERR;
-	       }
-	       //signal free lock & return OK
-	       signal(psuper->sb_freelock);
-	       return OK; 
-
-       }
-
-	freeblk->fr_free[freeblk->fr_count] = block;
-	freeblk->fr_count++;
-	//swizzle & error check
-	if (NULL == swizzle(diskfd, freeblk))
-	{
-		return SYSERR;
-	}
-	//signal free lock & return OK
-	signal(psuper->sb_freelock);
-
-	return OK;
+    signal(psuper->sb_freelock);
+    return OK;
 }
+
