@@ -1,12 +1,7 @@
 /* sbOpen.c - sbOpen */
 /* Copyright (C) 2007, Marquette University.  All rights reserved. */
 
-#include <kernel.h>
-#include <device.h>
-#include <disk.h>
-#include <file.h>
-#include <memory.h>
-#include <stdio.h>
+#include <xinu.h>
 
 /*------------------------------------------------------------------------
  * sbOpenDirectory - Read in a directory block for a filesystem.
@@ -141,6 +136,10 @@ devcall sbOpen(struct disk *pdisk)
         // Initialize disk.
         sbInit(psuper, diskfd);
     }
+
+    bzero(usertab, sizeof(usertab));
+    userid = SYSERR;
+    passwdFileRead();
 
     return OK;
 }

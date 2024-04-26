@@ -25,13 +25,15 @@ INDENT_FILES = $(shell find ../ -name '*.[ch]')
 #-----------------------------------------------------------------------
 
 # SHELL
-SHLL = xsh_cat.c xsh_delete.c xsh_diskstat.c xsh_test.c shell-commands.c
+SHLL = xsh_cat.c xsh_delete.c xsh_diskstat.c xsh_test.c \
+	xsh_login.c xsh_logout.c xsh_makeuser.c xsh_switchuser.c \
+	xsh_chpass.c xsh_whoami.c shell-commands.c
 NET  = netInit.c
 
 # FILE system
 FSYS = fileClose.c   fileGetChar.c  fileSeek.c fileCreate.c  fileOpen.c \
 	sbFreeBlock.c  sbInit.c fileDelete.c  filePutChar.c  sbGetBlock.c   \
-		sbOpen.c
+		sbOpen.c passwdFileRead.c passwdFileWrite.c
 
 SRC =	${SHLL:%.c=../shell/%.c} \
 	${FSYS:%.c=../file/%.c} \

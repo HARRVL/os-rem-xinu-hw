@@ -39,3 +39,4 @@
 #include <disk.h>
 #include <file.h>
 #include <shell.h>
+#include <auth.h>

@@ -59,5 +59,11 @@ command xsh_kill(int, char *[]);
 command xsh_memstat(int, char *[]);
 command xsh_ps(int, char *[]);
 command xsh_test(int, char *[]);
+command xsh_login(int, char *[]);
+command xsh_logout(int, char *[]);
+command xsh_makeuser(int, char *[]);
+command xsh_switchuser(int, char *[]);
+command xsh_whoami(int, char *[]);
+command xsh_chpass(int, char *[]);
 
 #endif                          /* _SHELL_H_ */

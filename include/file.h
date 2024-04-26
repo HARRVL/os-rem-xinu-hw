@@ -83,4 +83,7 @@ devcall sbOpen(struct disk *);
 devcall sbFreeBlock(struct superblock *, int);
 devcall sbGetBlock(struct superblock *);
 
+devcall passwdFileRead(void);
+devcall passwdFileWrite(void);
+
 #endif
