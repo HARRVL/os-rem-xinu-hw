@@ -6,6 +6,8 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
+#include <time.h> 
+#include "auth.h"
 
 /**
  * Shell command (makeuser) makes a new user account.
