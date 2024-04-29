@@ -6,7 +6,6 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
-#include <time.h> 
 #include "auth.h"
 
 /**
@@ -75,15 +74,15 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
 
-    srand(time(NULL)); // Seed the random number generator
-    usertab[newUserSlot].salt = rand(); // Get a random salt
+    // Here, instead of using a random value, we hash the username to generate a pseudo-random salt.
+    // This is not ideal for production as it is predictable.
+    ulong pseudoSalt = xinuhash(username, strlen(username), 0x5A5A5A5A);
+    
+    usertab[newUserSlot].salt = pseudoSalt;
     usertab[newUserSlot].state = USERUSED;
     strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
     usertab[newUserSlot].passhash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
-
-    printf("Debug: User '%s' with ID %d created. Salt = 0x%08X, Hash = 0x%08X\n", 
-           usertab[newUserSlot].username, newUserSlot, usertab[newUserSlot].salt, usertab[newUserSlot].passhash);
 
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the passwd file.\n");
