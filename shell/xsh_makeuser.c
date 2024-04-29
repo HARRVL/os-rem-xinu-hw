@@ -2,64 +2,93 @@
  * @file     xsh_makeuser.c
  * @provides xsh_makeuser
  *
- * Shell command to create a new user in the system.
  */
+/* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
+
 #include <xinu.h>
 
 /**
- * Prompts for a string input with a custom message, ensuring the input does not exceed the maximum length.
- * @param prompt The message to display to the user.
- * @param buffer The buffer to store the input string.
- * @param buflen The maximum length of the buffer.
+ * Shell command (makeuser) makes a new user account.
+ * @param args array of arguments
+ * @return OK for success, SYSERR for errors.
  */
-void promptForInput(const char *prompt, char *buffer, int buflen) {
-    printf("%s", prompt);
-    fgets(buffer, buflen, CONSOLE);
-    buffer[strcspn(buffer, "\n")] = '\0';  // Remove newline character.
-}
 
 /**
- * Main function to create a new user.
- * @param nargs Number of arguments passed.
- * @param args Array of arguments.
- * @return OK for success, SYSERR for error.
+ * TODO:
+ * This function creates a new entry in the global table of users,
+ * with a valid password hash and salt, and updates the passwd file
+ * on disk.  You may break this task down into any number of helper
+ * functions within this file, and also may rely on helper functions
+ * that already exist, such as getusername(), hasspassword(), and
+ * passwdFileWrite().
+ *
+ * Steps:
+ * 1) Find a free usertab entry for a new user, and set it USERUSED.
+ * 2) If the shell did not provide a user name, prompt for one.
+ * 3) Prompt for a new password, and calculate the hash.
+ * 4) Initialize the fields of the new user entry.
+ * 5) Commit the changes to the passwd file on disk.
+ * 6) Printf "Successfully created user ID %d\n" with the new user ID.
+ *
+ * Errors to watch for:
+ * 1) There is not already a user logged in.
+ *    Error text = "Must login first\n".
+ * 2) The logged in userid is not already SUPERUID.
+ *    Error text = "ERROR: Only superusr can make new users!\n".
+ * 3) There are no more unused slots in usertab.
+ *    Error text = "ERROR: No more users available in usertab!\n".
  */
+
+int findFreeUserSlot(void) {
+    for (int i = 0; i < MAXUSERS; i++) {
+        if (usertab[i].state == USERFREE) {
+            return i;
+        }
+    }
+    return SYSERR;
+}
+
 command xsh_makeuser(int nargs, char *args[]) {
     if (userid != SUPERUID) {
         fprintf(stderr, "ERROR: Only superusr can make new users!\n");
         return SYSERR;
     }
 
-    char username[MAXUSERLEN];
-    char password[MAXPASSLEN];
-
-    // Prompt for username
-    promptForInput("Enter new username: ", username, sizeof(username));
-
-    // Prompt for password
-    promptForInput("Enter new password: ", password, sizeof(password));
-
-    // Check for user slot availability
-    int newUserSlot = findFreeUserSlot();
-    if (newUserSlot == SYSERR) {
-        fprintf(stderr, "ERROR: No more users available in usertab.\n");
+    if (nargs != 3) {
+        fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
     }
 
-    // Initialize the new user slot
+    char* username = args[1];
+    char* password = args[2];
+
+    if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
+        fprintf(stderr, "ERROR: Username or password length is out of bounds.\n");
+        return SYSERR;
+    }
+
+    int newUserSlot = findFreeUserSlot();
+    if (newUserSlot == SYSERR) {
+        fprintf(stderr, "ERROR: No more users available in usertab!\n");
+        return SYSERR;
+    }
+
+    srand(time(NULL)); // Seed the random number generator
+    usertab[newUserSlot].salt = rand(); // Get a random salt
     usertab[newUserSlot].state = USERUSED;
-    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
+    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
-    usertab[newUserSlot].salt = rand(); // Generate a random salt
     usertab[newUserSlot].passhash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
 
-    // Commit the new user to persistent storage
+    printf("Debug: User '%s' with ID %d created. Salt = 0x%08X, Hash = 0x%08X\n", 
+           usertab[newUserSlot].username, newUserSlot, usertab[newUserSlot].salt, usertab[newUserSlot].passhash);
+
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
     }
 
-    printf("Successfully created user ID %d: %s\n", newUserSlot, username);
+    printf("Successfully created user ID %d\n", newUserSlot);
     return OK;
 }
 
