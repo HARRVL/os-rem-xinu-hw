@@ -6,7 +6,7 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
-#include "auth.h"
+
 
 /**
  * Shell command (makeuser) makes a new user account.
@@ -40,6 +40,7 @@
  *    Error text = "ERROR: No more users available in usertab!\n".
  */
 
+// Function to find the first free slot in the user table.
 int findFreeUserSlot(void) {
     for (int i = 0; i < MAXUSERS; i++) {
         if (usertab[i].state == USERFREE) {
@@ -49,12 +50,15 @@ int findFreeUserSlot(void) {
     return SYSERR;
 }
 
+// Main command to create a new user.
 command xsh_makeuser(int nargs, char *args[]) {
+    // Ensure the command is run by superuser.
     if (userid != SUPERUID) {
         fprintf(stderr, "ERROR: Only superusr can make new users!\n");
         return SYSERR;
     }
 
+    // Check the correct number of arguments.
     if (nargs != 3) {
         fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
@@ -63,27 +67,27 @@ command xsh_makeuser(int nargs, char *args[]) {
     char* username = args[1];
     char* password = args[2];
 
+    // Validate username and password lengths.
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
         fprintf(stderr, "ERROR: Username or password length is out of bounds.\n");
         return SYSERR;
     }
 
+    // Find a free slot for the new user.
     int newUserSlot = findFreeUserSlot();
     if (newUserSlot == SYSERR) {
         fprintf(stderr, "ERROR: No more users available in usertab!\n");
         return SYSERR;
     }
 
-    // Here, instead of using a random value, we hash the username to generate a pseudo-random salt.
-    // This is not ideal for production as it is predictable.
-    ulong pseudoSalt = xinuhash(username, strlen(username), 0x5A5A5A5A);
-    
-    usertab[newUserSlot].salt = pseudoSalt;
+    // Initialize the new user slot.
     usertab[newUserSlot].state = USERUSED;
-    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
+    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
+    usertab[newUserSlot].salt = rand(); // Generate a random salt for the user
     usertab[newUserSlot].passhash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
 
+    // Write the updated user table back to the disk.
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
