@@ -48,7 +48,13 @@ int findFreeUserSlot(void) {
     return SYSERR;
 }
 
-command xsh_makeuser(int nargs, char *args[]) {
+/**
+ * Shell command (makeuser) makes a new user account.
+ * @param args array of arguments
+ * @return OK for success, SYSERR for errors.
+ */
+command xsh_makeuser(int nargs, char *args[])
+{
     if (userid != SUPERUID) {
         fprintf(stderr, "ERROR: Only superusr can make new users!\n");
         return SYSERR;
@@ -73,16 +79,14 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
 
-    srand(time(NULL)); // Seed the random number generator
-    usertab[newUserSlot].salt = rand(); // Get a random salt
+    // Initialize the new user slot
     usertab[newUserSlot].state = USERUSED;
     strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
-    usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
+    usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0';  // Ensure null termination
+    usertab[newUserSlot].salt = rand(); // Assume rand() gives a sufficiently random salt
     usertab[newUserSlot].passhash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
 
-    printf("Debug: User '%s' with ID %d created. Salt = 0x%08X, Hash = 0x%08X\n", 
-           usertab[newUserSlot].username, newUserSlot, usertab[newUserSlot].salt, usertab[newUserSlot].passhash);
-
+    // Commit changes to the passwd file on disk
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
