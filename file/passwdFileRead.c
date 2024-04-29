@@ -33,5 +33,48 @@ devcall passwdFileRead(void)
  *    before overwriting the contents of the existing user table.
  *    Error text = "Passwd file contents corrupted!\n".
  */
+    
+    int fd, i = 0;
+    char buffer[sizeof(struct userent) * MAXUSERS];  // Buffer to hold the file data
+
+    // Step 1: Open the file
+    fd = fileOpen("passwd");
+    if (fd == SYSERR) {
+        fprintf(stderr, "No passwd file found.\n");
+        return SYSERR;
+    }
+
+    // Step 2: Seek to the start of the file
+    if (fileSeek(fd, 0) == SYSERR) {
+        fprintf(stderr, "Failed to seek to start of passwd file.\n");
+        fileClose(fd);
+        return SYSERR;
+    }
+
+    // Step 3: Read the bytes of the file
+    while (i < sizeof(buffer) && fileGetChar(fd) != SYSERR) {
+        buffer[i++] = fileGetChar(fd);
+    }
+
+    // Step 4: Close the file
+    fileClose(fd);
+
+    // Step 5: Check the file contents before copying
+    struct userent *temp = (struct userent *)buffer;
+    if (temp[0].state != USERUSED || temp[0].salt != SALT) {
+        fprintf(stderr, "Passwd file contents corrupted or does not match the current salt!\n");
+        return SYSERR;
+    }
+
+    // Verify all read users have expected salt and are marked as used
+    for (int j = 0; j < MAXUSERS; j++) {
+        if (temp[j].state == USERUSED && temp[j].salt != SALT) {
+            fprintf(stderr, "Passwd file contents corrupted!\n");
+            return SYSERR;
+        }
+    }
+
+    // If everything looks okay, copy the data to usertab
+    memcpy(usertab, temp, sizeof(buffer));
     return OK;
 }
