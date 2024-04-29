@@ -12,8 +12,7 @@
  * @param args array of arguments
  * @return OK for success, SYSERR for errors.
  */
-command xsh_makeuser(int nargs, char *args[])
-{
+
 /**
  * TODO:
  * This function creates a new entry in the global table of users,
