@@ -12,8 +12,7 @@
  * @param args array of arguments
  * @return OK for success, SYSERR for errors.
  */
-command xsh_chpass(int nargs, char *args[])
-{
+
 /**
  * TODO:
  * This function creates a new password for an existing user.
@@ -47,8 +46,70 @@ command xsh_chpass(int nargs, char *args[])
  *    Error text = "Password for user %s does not match!\n".
  */
 
-    if(nargs == 0){
-        
+char* promptForPassword(const char* prompt, int maxlen) {
+    char *password = (char *)malloc(maxlen + 1);
+    if (!password) return NULL;  // Check malloc succeeded
+
+    fprintf(CONSOLE, "%s", prompt);
+    int i = 0, ch;
+    while (i < maxlen && (ch = getc(CONSOLE)) != '\n' && ch != EOF) {
+        password[i++] = ch;
     }
+    password[i] = '\0';
+    return password;
+}
+
+command xsh_chpass(int nargs, char *args[]) {
+    // Step 1: Check login status
+    if (userid == SYSERR) {
+        fprintf(stderr, "Must login first\n");
+        return SYSERR;
+    }
+
+    char *username;
+    if (nargs < 2) {
+        // For superusr, prompt for the username if not provided
+        if (userid == SUPERUID) {
+            username = promptForPassword("Enter username to change password: ", MAXUSERLEN);
+        } else {
+            // Normal users can only change their own password
+            username = usertab[userid].username;
+        }
+    } else {
+        username = args[1];
+    }
+
+    // Step 2: Search for the user in usertab
+    int uid = searchname(username);
+    if (uid == SYSERR) {
+        fprintf(stderr, "User name %s not found.\n", username);
+        return SYSERR;
+    }
+
+    // Step 3: If not superusr, verify old password
+    if (userid != SUPERUID) {
+        char *oldPassword = promptForPassword("Enter previous password for user: ", MAXPASSLEN);
+        ulong hash = xinuhash(oldPassword, strlen(oldPassword), usertab[uid].salt);
+        free(oldPassword);
+        if (hash != usertab[uid].passhash) {
+            fprintf(stderr, "Password for user %s does not match!\n", username);
+            return SYSERR;
+        }
+    }
+
+    // Step 4: Prompt for the new password
+    char *newPassword = promptForPassword("Enter new password for user: ", MAXPASSLEN);
+    ulong newPassHash = xinuhash(newPassword, strlen(newPassword), usertab[uid].salt);
+    free(newPassword);
+
+    // Step 5: Update the user's password hash
+    usertab[uid].passhash = newPassHash;
+    if (passwdFileWrite() == SYSERR) {
+        fprintf(stderr, "Failed to update the password file.\n");
+        return SYSERR;
+    }
+
+    // Step 6: Confirm the password change
+    printf("Successfully changed password for user ID %d\n", uid);
     return OK;
 }
