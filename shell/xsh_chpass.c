@@ -46,5 +46,9 @@ command xsh_chpass(int nargs, char *args[])
  * 4) The password change failed.  (i.e., passwords didn't match.)
  *    Error text = "Password for user %s does not match!\n".
  */
+
+    if(nargs == 0){
+        
+    }
     return OK;
 }
