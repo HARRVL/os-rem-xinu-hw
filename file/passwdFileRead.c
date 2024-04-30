@@ -52,7 +52,8 @@ devcall passwdFileRead(void)
     }
 
     // Step 3: Read the bytes of the file
-    for(i = 0, i < usertab, i++){
+    char c;
+    for(i = 0; i < usertab; i++){
         c = fileGetChar(fd);
         if(c == EOF){
         break;
