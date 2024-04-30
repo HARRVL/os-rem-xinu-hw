@@ -35,7 +35,7 @@ devcall passwdFileRead(void)
  */
     
     int fd, i = 0;
-    char buffer[sizeof(struct userent) * MAXUSERS];  // Buffer to hold the file data
+    char buffer[sizeof(usertab)];  // Buffer to hold the file data
 
     // Step 1: Open the file
     fd = fileOpen("passwd");
@@ -52,9 +52,14 @@ devcall passwdFileRead(void)
     }
 
     // Step 3: Read the bytes of the file
-    while (i < sizeof(buffer) && fileGetChar(fd) != SYSERR) {
-        buffer[i++] = fileGetChar(fd);
+    for(i = 0, i < usertab, i++){
+        c = fileGetChar(fd);
+        if(c == EOF){
+        break;
+        
     }
+    buffer[i] = c;
+}
 
     // Step 4: Close the file
     fileClose(fd);
@@ -64,17 +69,18 @@ devcall passwdFileRead(void)
     if (temp[0].state != USERUSED || temp[0].salt != SALT) {
         fprintf(stderr, "Passwd file contents corrupted or does not match the current salt!\n");
         return SYSERR;
-    }
+    }    
 
-    // Verify all read users have expected salt and are marked as used
-    for (int j = 0; j < MAXUSERS; j++) {
-        if (temp[j].state == USERUSED && temp[j].salt != SALT) {
-            fprintf(stderr, "Passwd file contents corrupted!\n");
-            return SYSERR;
-        }
-    }
+    // // Verify all read users have expected salt and are marked as used
+    // for (int j = 0; j < MAXUSERS; j++) {
+    //     if (temp[j].state == USERUSED && temp[j].salt != SALT) {
+    //         fprintf(stderr, "Passwd file contents corrupted!\n");
+    //         return SYSERR;
+    //     }
+    // }
 
     // If everything looks okay, copy the data to usertab
-    memcpy(usertab, temp, sizeof(buffer));
+    memcpy(usertab, buffer, sizeof(usertab));
+
     return OK;
 }
