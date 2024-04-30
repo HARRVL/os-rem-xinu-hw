@@ -53,7 +53,9 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
     if(nargs ==1){
-        getusername(usertab[newUserSlot].username,MAXUSERLEN) ; 
+        getusername(usertab[newUserSlot].username,MAXUSERLEN) ;
+        
+        
     }else{
       
         if(strlen( args[1]) > MAXUSERLEN){
@@ -76,7 +78,7 @@ command xsh_makeuser(int nargs, char *args[]) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
     }
-    printf("Successfully created user ID %d: %s\n", newUserSlot, args[1]);
+    printf("Successfully created user ID %d: %s\n", newUserSlot, usertab[newUserSlot].username);
     return OK;
 }
 
