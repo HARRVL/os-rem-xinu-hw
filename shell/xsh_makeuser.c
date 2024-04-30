@@ -31,48 +31,43 @@ int findFreeUserSlot(void) {
 command xsh_makeuser(int nargs, char *args[]) {
     printf("Debug: Entered xsh_makeuser function\n");
 
+    if( userid < SUPERUID){
+        return SYSERR
+        printf("Must login first"); 
+    }
     if (userid != SUPERUID) {
-        fprintf(stderr, "ERROR: Only superusr can make new users!\n");
+        printf("ERROR: Only superusr can make new users!\n");
         return SYSERR;
     }
 
-    char username[MAXUSERLEN];
-    char password[MAXPASSLEN];
-
-    // Prompt for username
-    printf("Enter username: ");
-    fgets(username, MAXUSERLEN, CONSOLE);
-    username[strcspn(username, "\n")] = '\0';  // Remove newline character if present
-
-    // Prompt for password
-    printf("Enter password: ");
-    fgets(password, MAXPASSLEN, CONSOLE);
-    password[strcspn(password, "\n")] = '\0';  // Remove newline character if present
-
-    if (strlen(username) == 0 || strlen(password) == 0) {
-        fprintf(stderr, "ERROR: Username and password must not be empty.\n");
+    if (nargs != 3) {
+        fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
     }
+
+    char* username = args[1];
+    char* password = args[2];
+
+    printf("Debug: Username = '%s', Password = '%s'\n", username, password);
 
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
-        fprintf(stderr, "ERROR: Username or password length is out of bounds.\n");
+        printf("ERROR: Username or password length is out of bounds.\n");
         return SYSERR;
     }
 
     int newUserSlot = findFreeUserSlot();
     if (newUserSlot == SYSERR) {
-        fprintf(stderr, "ERROR: No more users available in usertab.\n");
         return SYSERR;
     }
 
     // Initialize the new user slot
     usertab[newUserSlot].state = USERUSED;
-    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
+    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
-    usertab[newUserSlot].salt = rand(); // Generate a random salt
+    usertab[newUserSlot].salt = SALT; // Generate a random salt
 
     // Hash the password
-    ulong hash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
+    ulong hash = passwordHash(usertab[newUserSlot].salt);
     printf("Debug: Generated hash = 0x%08X for user %s\n", hash, username);
 
     usertab[newUserSlot].passhash = hash;
@@ -87,5 +82,6 @@ command xsh_makeuser(int nargs, char *args[]) {
     printf("Debug: Exiting xsh_makeuser function\n");
     return OK;
 }
+
 
 
