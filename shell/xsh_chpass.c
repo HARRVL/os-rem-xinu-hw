@@ -66,7 +66,7 @@ command xsh_chpass(int nargs, char *args[]) {
         return SYSERR;
     }
 
-    char username[MAXUSERLEN];
+    char *username[MAXUSERLEN];
     if (nargs < 2) {
         // For superusr, prompt for the username if not provided
         if (userid == SUPERUID) {
