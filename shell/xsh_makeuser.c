@@ -44,10 +44,11 @@ command xsh_makeuser(int nargs, char *args[]) {
         fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
     }
-    printf("GET USERNAME HERE: "); 
+    
     char* username = args[1];
     char* password = args[2];
 
+    printf("Username: %s, Password: %s",username,password); 
     printf("Debug: Username = '%s', Password = '%s'\n", username, password);
 
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
