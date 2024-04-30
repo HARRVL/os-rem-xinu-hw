@@ -44,7 +44,7 @@ command xsh_makeuser(int nargs, char *args[]) {
         fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
     }
-
+    printf("GET USERNAME HERE: "); 
     char* username = args[1];
     char* password = args[2];
 
