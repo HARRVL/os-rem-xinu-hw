@@ -43,8 +43,6 @@ command xsh_makeuser(int nargs, char *args[]) {
 
     // Initialize the new user slot
     usertab[newUserSlot].state = USERUSED;
-    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
-    usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
     usertab[newUserSlot].salt = SALT;  // Generate a random salt for security
 
    
