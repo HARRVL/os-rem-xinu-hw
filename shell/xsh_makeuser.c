@@ -55,13 +55,13 @@ command xsh_makeuser(int nargs, char *args[]) {
     if(nargs ==1){
         getusername(usertab[newUserSlot].username,MAXUSERLEN) ; 
     }else{
-        char* username = args[1];
-        if(strlen(username) > MAXUSERLEN){
+      
+        if(strlen( args[1]) > MAXUSERLEN){
             
                 printf("Username too long"); 
                 return SYSERR; 
                 }
-        strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
+        strncpy(usertab[newUserSlot].username,args[1], MAXUSERLEN);
         usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
     }
 
