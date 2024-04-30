@@ -32,7 +32,7 @@ command xsh_makeuser(int nargs, char *args[]) {
     printf("Debug: Entered xsh_makeuser function\n");
 
     if( userid < SUPERUID){
-        return SYSERR
+        return SYSERR; 
         printf("Must login first"); 
     }
     if (userid != SUPERUID) {
