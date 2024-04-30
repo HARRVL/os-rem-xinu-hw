@@ -29,14 +29,14 @@ int findFreeUserSlot(void) {
 command xsh_makeuser(int nargs, char *args[]) {
 
      if (userid != SUPERUID) {
-        printf("ERROR: Only superusr can make new users!\n");
+        printf("Must login first\n");
         return SYSERR;
     }
     
     // Find a free slot in the user table
     int newUserSlot = findFreeUserSlot();
     if (newUserSlot == SYSERR) {
-        printf("ERROR: No more users available in usertab.\n");
+        printf("ERROR: No more users available in usertab!\n");
         return SYSERR;
     }
 
