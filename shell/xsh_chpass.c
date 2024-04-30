@@ -88,22 +88,16 @@ command xsh_chpass(int nargs, char *args[]) {
 
     // Step 3: If not superusr, verify old password
     if (userid != SUPERUID) {
-        char *oldPassword = promptForPassword("Enter previous password for user: ", MAXPASSLEN);
-        ulong hash = xinuhash(oldPassword, strlen(oldPassword), usertab[uid].salt);
-        free(oldPassword);
-        if (hash != usertab[uid].passhash) {
+        printf("Verify your previous password: \n"); 
+        if(hashpassword(usertab[uid].salt) == usertab[uid].passhash){
+            printf("Enter Your New Password: \n"); 
+            usertab[uid].passhash = hashpassword(usertab[uid].salt); 
+        }else{
             fprintf(stderr, "Password for user %s does not match!\n", username);
             return SYSERR;
         }
     }
 
-    // Step 4: Prompt for the new password
-    char *newPassword = promptForPassword("Enter new password for user: ", MAXPASSLEN);
-    ulong newPassHash = xinuhash(newPassword, strlen(newPassword), usertab[uid].salt);
-    free(newPassword);
-
-    // Step 5: Update the user's password hash
-    usertab[uid].passhash = newPassHash;
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the password file.\n");
         return SYSERR;
