@@ -27,27 +27,12 @@ int findFreeUserSlot(void) {
  * @return OK on success, SYSERR on failure.
  */
 command xsh_makeuser(int nargs, char *args[]) {
-    // Check if the current user is the superuser
-    if (userid != SUPERUID) {
+
+     if (userid != SUPERUID) {
         printf("ERROR: Only superusr can make new users!\n");
         return SYSERR;
     }
-
-    // Check for correct number of arguments
-    if (nargs != 3) {
-        fprintf(stderr, "Usage: makeuser <username> <password>\n");
-        return SYSERR;
-    }
-
-    char* username = args[1];
-    char* password = args[2];
-
-    // Validate username and password lengths
-    if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
-        printf("ERROR: Username or password length is out of bounds.\n");
-        return SYSERR;
-    }
-
+    
     // Find a free slot in the user table
     int newUserSlot = findFreeUserSlot();
     if (newUserSlot == SYSERR) {
@@ -55,22 +40,44 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
 
+
     // Initialize the new user slot
     usertab[newUserSlot].state = USERUSED;
     strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
-    usertab[newUserSlot].salt = rand();  // Generate a random salt for security
+    usertab[newUserSlot].salt = SALT;  // Generate a random salt for security
 
-    // Hash the password
-    ulong hash = xinuhash(password, strlen(password), usertab[newUserSlot].salt);
+   
+
+    // Check for correct number of arguments
+    if (nargs < 1) {
+        fprintf(stderr, "Usage: makeuser <username> <password>\n");
+        return SYSERR;
+    }
+    if(nargs ==1){
+        getusername(usertab[newUserSlot].username,MAXUSERLEN) ; 
+    }else{
+        char* username = args[1];
+        if(strlen(username) > MAXUSERLEN){
+            
+                printf("Username too long"); 
+                return SYSERR; 
+                }
+        strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
+        usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
+    }
+
+    printf("Enter Password: "); 
+    ulong hash = hashpassword(usertab[newUserSlot].salt);
     usertab[newUserSlot].passhash = hash;
+
+    
 
     // Write the updated user table to the passwd file
     if (passwdFileWrite() == SYSERR) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
     }
-
     printf("Successfully created user ID %d: %s\n", newUserSlot, username);
     return OK;
 }
