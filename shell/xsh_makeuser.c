@@ -76,7 +76,7 @@ command xsh_makeuser(int nargs, char *args[]) {
         fprintf(stderr, "Failed to update the passwd file.\n");
         return SYSERR;
     }
-    printf("Successfully created user ID %d: %s\n", newUserSlot, username);
+    printf("Successfully created user ID %d: %s\n", newUserSlot, args[1]);
     return OK;
 }
 
