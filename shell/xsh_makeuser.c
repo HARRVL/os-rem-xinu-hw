@@ -36,7 +36,7 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
 
-    if (nargs != 3) {
+    if (nargs == 2) {
         fprintf(stderr, "Usage: makeuser <username> <password>\n");
         return SYSERR;
     }
@@ -44,7 +44,6 @@ command xsh_makeuser(int nargs, char *args[]) {
     char* username = args[1];
     char* password = args[2];
 
-    printf("Debug: Username = '%s', Password = '%s'\n", username, password);
 
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
         fprintf(stderr, "ERROR: Username or password length is out of bounds.\n");
