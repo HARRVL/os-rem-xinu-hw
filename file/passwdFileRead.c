@@ -75,7 +75,7 @@ devcall passwdFileRead(void)
     }
 
     // If everything looks okay, copy the data to usertab
-    memcpy(usertab, temp, sizeof(buffer));
+    memcpy(usertab, temp, sizeof(struct userent) * MAXUSERS));
     return OK;
 }
 
