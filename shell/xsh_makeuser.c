@@ -82,6 +82,3 @@ command xsh_makeuser(int nargs, char *args[]) {
     printf("Debug: Exiting xsh_makeuser function\n");
     return OK;
 }
-
-
-
