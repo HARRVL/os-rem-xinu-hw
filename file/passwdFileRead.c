@@ -75,6 +75,6 @@ devcall passwdFileRead(void)
     }
 
     // If everything looks okay, copy the data to usertab
-    memcpy(usertab, temp, sizeof(usertab));
+    memcpy(usertab, temp, sizeof(buffer));
     return OK;
 }
