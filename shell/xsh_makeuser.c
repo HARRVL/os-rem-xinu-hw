@@ -14,11 +14,9 @@
 int findFreeUserSlot(void) {
     for (int i = 0; i < MAXUSERS; i++) {
         if (usertab[i].state == USERFREE) {
-            printf("Debug: Found free user slot at index %d\n", i);
             return i;
         }
     }
-    printf("Debug: No free user slot available\n");
     return SYSERR;
 }
 
@@ -29,7 +27,7 @@ int findFreeUserSlot(void) {
  * @return OK on success, SYSERR on failure.
  */
 command xsh_makeuser(int nargs, char *args[]) {
-    printf("Debug: Entered xsh_makeuser function\n");
+    
 
     if( userid < SUPERUID){
         return SYSERR; 
@@ -47,9 +45,6 @@ command xsh_makeuser(int nargs, char *args[]) {
     
     char* username = args[1];
     char* password = args[2];
-
-    printf("Username: %s, Password: %s",username,password); 
-    printf("Debug: Username = '%s', Password = '%s'\n", username, password);
 
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
         printf("ERROR: Username or password length is out of bounds.\n");
@@ -69,7 +64,6 @@ command xsh_makeuser(int nargs, char *args[]) {
 
     // Hash the password
     ulong hash = hashpassword(usertab[newUserSlot].salt);
-    printf("Debug: Generated hash = 0x%08X for user %s\n", hash, username);
 
     usertab[newUserSlot].passhash = hash;
 
@@ -80,6 +74,5 @@ command xsh_makeuser(int nargs, char *args[]) {
     }
 
     printf("Successfully created user ID %d: %s\n", newUserSlot, username);
-    printf("Debug: Exiting xsh_makeuser function\n");
     return OK;
 }
