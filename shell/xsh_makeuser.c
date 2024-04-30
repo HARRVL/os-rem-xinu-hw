@@ -67,7 +67,7 @@ command xsh_makeuser(int nargs, char *args[]) {
     usertab[newUserSlot].salt = SALT; // Generate a random salt
 
     // Hash the password
-    ulong hash = passwordHash(usertab[newUserSlot].salt);
+    ulong hash = hashpassword(usertab[newUserSlot].salt);
     printf("Debug: Generated hash = 0x%08X for user %s\n", hash, username);
 
     usertab[newUserSlot].passhash = hash;
