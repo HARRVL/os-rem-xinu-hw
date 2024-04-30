@@ -67,7 +67,7 @@ command xsh_makeuser(int nargs, char *args[]) {
         usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
     }
 
-    printf("Enter Password: "); 
+    printf("Enter password for user %s: ", usertab[newUserSlot].username); 
     ulong hash = hashpassword(usertab[newUserSlot].salt);
     usertab[newUserSlot].passhash = hash;
 
