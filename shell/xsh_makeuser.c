@@ -36,14 +36,23 @@ command xsh_makeuser(int nargs, char *args[]) {
         return SYSERR;
     }
 
-    if (nargs == 2) {
-        fprintf(stderr, "Usage: makeuser <username> <password>\n");
+    char username[MAXUSERLEN];
+    char password[MAXPASSLEN];
+
+    // Prompt for username
+    printf("Enter username: ");
+    fgets(username, MAXUSERLEN, CONSOLE);
+    username[strcspn(username, "\n")] = '\0';  // Remove newline character if present
+
+    // Prompt for password
+    printf("Enter password: ");
+    fgets(password, MAXPASSLEN, CONSOLE);
+    password[strcspn(password, "\n")] = '\0';  // Remove newline character if present
+
+    if (strlen(username) == 0 || strlen(password) == 0) {
+        fprintf(stderr, "ERROR: Username and password must not be empty.\n");
         return SYSERR;
     }
-
-    char* username = args[1];
-    char* password = args[2];
-
 
     if (strlen(username) >= MAXUSERLEN || strlen(password) >= MAXPASSLEN) {
         fprintf(stderr, "ERROR: Username or password length is out of bounds.\n");
@@ -52,12 +61,13 @@ command xsh_makeuser(int nargs, char *args[]) {
 
     int newUserSlot = findFreeUserSlot();
     if (newUserSlot == SYSERR) {
+        fprintf(stderr, "ERROR: No more users available in usertab.\n");
         return SYSERR;
     }
 
     // Initialize the new user slot
     usertab[newUserSlot].state = USERUSED;
-    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN);
+    strncpy(usertab[newUserSlot].username, username, MAXUSERLEN - 1);
     usertab[newUserSlot].username[MAXUSERLEN - 1] = '\0'; // Ensure null termination
     usertab[newUserSlot].salt = rand(); // Generate a random salt
 
@@ -77,6 +87,5 @@ command xsh_makeuser(int nargs, char *args[]) {
     printf("Debug: Exiting xsh_makeuser function\n");
     return OK;
 }
-
 
 
