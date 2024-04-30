@@ -70,7 +70,9 @@ command xsh_chpass(int nargs, char *args[]) {
     if (nargs < 2) {
         // For superusr, prompt for the username if not provided
         if (userid == SUPERUID) {
-            username = promptForPassword("Enter username to change password: ", MAXUSERLEN);
+            getusername(username,MAXUSERLEN);
+            
+            
         } else {
             // Normal users can only change their own password
             username = usertab[userid].username;
@@ -96,6 +98,9 @@ command xsh_chpass(int nargs, char *args[]) {
             fprintf(stderr, "Password for user %s does not match!\n", username);
             return SYSERR;
         }
+    }else{
+        printf("Enter Your New Password: \n"); 
+            usertab[uid].passhash = hashpassword(usertab[uid].salt); 
     }
 
     if (passwdFileWrite() == SYSERR) {
