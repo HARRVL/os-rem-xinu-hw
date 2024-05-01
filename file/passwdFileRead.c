@@ -73,7 +73,7 @@ devcall passwdFileRead(void)
             return SYSERR;
         }
     }
-
+    printf("******* HERE JUST BEFORE MEMCOPY");
     // If everything looks okay, copy the data to usertab
     memcpy(usertab, temp, sizeof(struct userent) * MAXUSERS);
     return OK;
