@@ -35,6 +35,7 @@ devcall passwdFileRead(void)
  */
     
     int fd, i = 0;
+    printf("opening line");
     char buffer[sizeof(struct userent) * MAXUSERS];  // Buffer to hold the file data
 
     // Step 1: Open the file
