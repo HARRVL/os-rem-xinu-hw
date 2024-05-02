@@ -24,25 +24,30 @@ command xsh_deluser(int nargs, char *args[])
         return SYSERR;
     }
 
-    getusername(buffer,MAXUSERLEN); 
-    
+    if(nargs <1){
+        printf("Provide a username to delete");
+        return SYSERR;
+    }
+    if(nargs == 1){
+        getusername(buffer,MAXUSERLEN);
+       
+    }else{
+        if(strlen(args[1]) > MAXUSERLEN){
+            printf("Username Too long"); 
+            return SYSERR;
+        }
+        strncopy(buffer,args[1],MAXUSERLEN) ;
+        buffer[MAXUSERLEN -1] = '\0';
+          
+    }
 
-    
-    // //Attempt authentication
-    // if (nargs == 2)
-    // {
-    //     id = login(args[1]);
-    // }
-    // else
-    // {
-    //     id = login(NULL);
-    // }
-    // if (SYSERR == id)
-    // {
-    //     printf("Login failure.\n");
-    //     return SYSERR;
-    // }
-    // userid = id;
-    // printf("Success!\n");
+    id = searchname(buffer); 
+    if((id <SUPERID) || (id > MAXUSERS)){
+        printf("User does not exist");
+        return SYSERR; 
+    }
+
+    usertab[id].state = USERFREE; 
+    printf("Successfully deleted user %s",buffer);
     return OK;
 }
