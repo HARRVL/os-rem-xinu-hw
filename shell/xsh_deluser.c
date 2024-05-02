@@ -42,12 +42,14 @@ command xsh_deluser(int nargs, char *args[])
         buffer[MAXUSERLEN -1] = '\0';
           
     }
+    
     c = getc(buffer)
     while(c != '\0'){
         c = getc(buffer);
     }do{
         printf("Buffer = %c",c); 
     }
+        
 
     id = searchname(buffer); 
     if(userid == id){
