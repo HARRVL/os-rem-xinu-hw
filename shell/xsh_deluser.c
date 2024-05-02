@@ -42,7 +42,7 @@ command xsh_deluser(int nargs, char *args[])
     }
 
     id = searchname(buffer); 
-    if((id <SUPERID) || (id > MAXUSERS)){
+    if((id <SUPERUID) || (id > MAXUSERS)){
         printf("User does not exist");
         return SYSERR; 
     }
