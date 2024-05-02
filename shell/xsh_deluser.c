@@ -25,6 +25,7 @@ command xsh_deluser(int nargs, char *args[])
         printf("Must be super user to peform this action! \n");
         return SYSERR;
     }
+    
 
     if(nargs <1){
         printf("Provide a username to delete");
@@ -49,6 +50,10 @@ command xsh_deluser(int nargs, char *args[])
     if(userid == id){
         printf("You cannot delete this user while you are signed in as them");
         return SYSERR;
+    }
+    if(id = SUPERUID){
+        printf("Cannot delete SuperUser");
+        return SYSERR; 
     }
     if((id <SUPERUID) || (id > MAXUSERS)){
         printf("User does not exist!!!!");
