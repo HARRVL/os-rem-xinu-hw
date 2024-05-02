@@ -46,16 +46,16 @@ command xsh_deluser(int nargs, char *args[])
         
 
     id = searchname(buffer); 
-    printf("Id = %d",id);
+    
     if(userid == id){
         printf("You cannot delete this user while you are signed in as them");
         return SYSERR;
     }
-    else if(id = SUPERUID){
+    if(id = SUPERUID){
         printf("Cannot delete SuperUser");
         return SYSERR; 
     }
-    else if((id <SUPERUID) || (id > MAXUSERS)){
+    if((id <SUPERUID) || (id > MAXUSERS)){
         printf("User does not exist!!!!");
         return SYSERR; 
     }
@@ -63,6 +63,9 @@ command xsh_deluser(int nargs, char *args[])
     
 
     usertab[id].state = USERFREE; 
+    usertab[id].username = NULL;
+    usertab[id].passhash = NULL; 
     printf("Successfully deleted user %s",buffer);
+    passwdFileWrite();
     return OK;
 }
