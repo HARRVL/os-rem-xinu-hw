@@ -24,18 +24,8 @@ command xsh_deluser(int nargs, char *args[])
         return SYSERR;
     }
 
-    printf("Enter Username to Delete: /n"); 
-    c = getc(CONSOLE);
-    while (isspace(c))
-    {
-        c = getc(CONSOLE);
-    }
-    do
-    {
-        buffer[i] = c;
-        i++;
-    }
-    while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < maxlen));
+    getusername(buffer,MAXUSERLEN); 
+    
 
     
     // //Attempt authentication
