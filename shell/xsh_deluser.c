@@ -46,10 +46,6 @@ command xsh_deluser(int nargs, char *args[])
    
     int i =0; 
     int c = getc(buffer);
-    while (isspace(c))
-    {
-        c = getc(buffer);
-    }
     do
     {
         printf("Buffer = %c",c); 
