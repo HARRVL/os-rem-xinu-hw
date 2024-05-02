@@ -18,7 +18,7 @@ command xsh_deluser(int nargs, char *args[])
 {
     int id;
     char buffer[MAXUSERLEN];
-    printf("User id %d",userid); 
+    
 
     if (userid != SUPERUID)
     {
