@@ -65,6 +65,6 @@ command xsh_makeuser(int, char *[]);
 command xsh_switchuser(int, char *[]);
 command xsh_whoami(int, char *[]);
 command xsh_chpass(int, char *[]);
-comman xsh_deluser(int,char*[]); 
+command xsh_deluser(int,char*[]); 
 
 #endif                          /* _SHELL_H_ */
