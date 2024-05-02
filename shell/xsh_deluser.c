@@ -19,7 +19,7 @@ command xsh_deluser(int nargs, char *args[])
     int id;
     char buffer[MAXUSERLEN];
 
-    if (userid < SUPERUID)
+    if (userid != SUPERUID)
     {
         printf("Must be super user to peform this action! \n");
         return SYSERR;
