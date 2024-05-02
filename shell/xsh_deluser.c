@@ -63,8 +63,8 @@ command xsh_deluser(int nargs, char *args[])
     
 
     usertab[id].state = USERFREE; 
-    usertab[id].username = NULL;
-    usertab[id].passhash = NULL; 
+    usertab[id].username = bzero(usertab[id].username,0);
+    usertab[id].passhash = 0; 
     printf("Successfully deleted user %s",buffer);
     passwdFileWrite();
     return OK;
