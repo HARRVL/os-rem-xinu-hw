@@ -51,11 +51,11 @@ command xsh_deluser(int nargs, char *args[])
         printf("You cannot delete this user while you are signed in as them");
         return SYSERR;
     }
-    if(id = SUPERUID){
+    else if(id = SUPERUID){
         printf("Cannot delete SuperUser");
         return SYSERR; 
     }
-    if((id <SUPERUID) || (id > MAXUSERS)){
+    else if((id <SUPERUID) || (id > MAXUSERS)){
         printf("User does not exist!!!!");
         return SYSERR; 
     }
