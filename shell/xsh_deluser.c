@@ -16,6 +16,7 @@
 command xsh_deluser(int nargs, char *args[])
 {
     int id;
+    char buffer[MAXUSERLEN]; 
 
     if (userid < SUPERUID)
     {
@@ -23,21 +24,35 @@ command xsh_deluser(int nargs, char *args[])
         return SYSERR;
     }
 
-    //Attempt authentication
-    if (nargs == 2)
+    printf("Enter Username to Delete: /n"); 
+    c = getc(CONSOLE);
+    while (isspace(c))
     {
-        id = login(args[1]);
+        c = getc(CONSOLE);
     }
-    else
+    do
     {
-        id = login(NULL);
+        buffer[i] = c;
+        i++;
     }
-    if (SYSERR == id)
-    {
-        printf("Login failure.\n");
-        return SYSERR;
-    }
-    userid = id;
-    printf("Success!\n");
+    while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < maxlen));
+
+    
+    // //Attempt authentication
+    // if (nargs == 2)
+    // {
+    //     id = login(args[1]);
+    // }
+    // else
+    // {
+    //     id = login(NULL);
+    // }
+    // if (SYSERR == id)
+    // {
+    //     printf("Login failure.\n");
+    //     return SYSERR;
+    // }
+    // userid = id;
+    // printf("Success!\n");
     return OK;
 }
