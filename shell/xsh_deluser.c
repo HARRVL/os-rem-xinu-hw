@@ -37,7 +37,7 @@ command xsh_deluser(int nargs, char *args[])
             printf("Username Too long"); 
             return SYSERR;
         }
-        strncopy(buffer,args[1],MAXUSERLEN) ;
+        //strncopy(buffer,args[1],MAXUSERLEN) ;
         buffer[MAXUSERLEN -1] = '\0';
           
     }
