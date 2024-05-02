@@ -7,6 +7,7 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
+#include <string.h>
 
 /**
  * Shell command (delUSer) is deletinguser hook.
