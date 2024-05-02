@@ -55,7 +55,7 @@ command xsh_deluser(int nargs, char *args[])
         printf("Buffer = %c",c); 
         
     }
-    while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < maxlen));
+    while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < 200));
         
 
     id = searchname(buffer); 
