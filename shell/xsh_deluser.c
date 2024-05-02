@@ -44,8 +44,8 @@ command xsh_deluser(int nargs, char *args[])
     }
     
    
-
-    c = getc(buffer);
+    int i =0; 
+    int c = getc(buffer);
     while (isspace(c))
     {
         c = getc(buffer);
@@ -53,6 +53,7 @@ command xsh_deluser(int nargs, char *args[])
     do
     {
         printf("Buffer = %c",c); 
+        i++;
         
     }
     while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < 200));
