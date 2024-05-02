@@ -21,7 +21,7 @@ command xsh_deluser(int nargs, char *args[])
 
     if (userid < SUPERUID)
     {
-        printf("Must login first\n");
+        printf("Must be super user to peform this action! \n");
         return SYSERR;
     }
 
