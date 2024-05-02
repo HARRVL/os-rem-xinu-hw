@@ -43,7 +43,7 @@ command xsh_deluser(int nargs, char *args[])
           
     }
     
-    c = getc(buffer)
+   char c = getc(buffer);
     while(c != '\0'){
         c = getc(buffer);
     }do{
