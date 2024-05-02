@@ -18,6 +18,7 @@ command xsh_deluser(int nargs, char *args[])
 {
     int id;
     char buffer[MAXUSERLEN];
+    printf("User id %d",userid); 
 
     if (userid != SUPERUID)
     {
@@ -41,6 +42,12 @@ command xsh_deluser(int nargs, char *args[])
         buffer[MAXUSERLEN -1] = '\0';
           
     }
+    c = getc(buffer)
+    while(c != '\0'){
+        c = getc(buffer);
+    }do{
+        printf("Buffer = %c",c); 
+    }
 
     id = searchname(buffer); 
     if(userid == id){
@@ -51,6 +58,8 @@ command xsh_deluser(int nargs, char *args[])
         printf("User does not exist");
         return SYSERR; 
     }
+
+    
 
     usertab[id].state = USERFREE; 
     printf("Successfully deleted user %s",buffer);
