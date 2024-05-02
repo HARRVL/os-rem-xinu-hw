@@ -42,20 +42,10 @@ command xsh_deluser(int nargs, char *args[])
         buffer[MAXUSERLEN -1] = '\0';
           
     }
-    
-   
-    int i =0; 
-    int c = getc(buffer);
-    do
-    {
-        printf("Buffer = %c",c); 
-        i++;
-        
-    }
-    while ((EOF != (c = getc(CONSOLE))) && !isspace(c) && (i < 200));
         
 
     id = searchname(buffer); 
+    printf("Id = %d",id);
     if(userid == id){
         printf("You cannot delete this user while you are signed in as them");
         return SYSERR;
