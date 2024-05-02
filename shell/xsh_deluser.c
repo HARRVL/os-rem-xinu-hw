@@ -43,6 +43,10 @@ command xsh_deluser(int nargs, char *args[])
     }
 
     id = searchname(buffer); 
+    if(userid == id){
+        printf("You cannot delete this user while you are signed in as them");
+        return SYSERR;
+    }
     if((id <SUPERUID) || (id > MAXUSERS)){
         printf("User does not exist");
         return SYSERR; 
