@@ -26,6 +26,7 @@ struct centry commandtab[] = {
     { "switchuser", FALSE, xsh_switchuser },
     { "test", FALSE, xsh_test },
     { "whoami", FALSE, xsh_whoami },
+    { "deluser", FALSE,xsh_deluser},
     { "?", FALSE, xsh_help }
 };
 
